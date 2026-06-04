@@ -15,8 +15,8 @@ import {
 
 const sliderToAHP = (pos) => {
   if (pos === 9) return 1;
-  if (pos < 9) return 1 / (10 - pos);
-  return pos - 8;
+  if (pos < 9) return 10 - pos;
+  return 1 / (pos - 8);
 };
 
 const computeAHP = (matrix) => {
@@ -88,10 +88,10 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
 
   const PRESETS = useMemo(() => ({
     equal:         [9, 9, 9, 9, 9, 9],
-    price_first:   [13, 13, 12, 9, 9, 9],
-    range_first:   [6,  9,  9, 12, 12, 9],
-    speed_first:   [9,  6,  9, 6, 9, 12],
-    balanced_ev:   [11, 10, 10, 9, 9, 9],
+    price_first:   [5, 5, 6, 9, 9, 9],
+    range_first:   [12, 9, 9, 6, 6, 9],
+    speed_first:   [9, 12, 9, 12, 9, 6],
+    balanced_ev:   [7, 8, 8, 9, 9, 9],
   }), []);
 
   const buildMatrix = (currentSliders) => {

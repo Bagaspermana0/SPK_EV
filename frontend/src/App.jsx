@@ -27,6 +27,10 @@ function App() {
   const [activeTab, setActiveTab] = useState('ahp');
   const [backendOnline, setBackendOnline] = useState(false);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeTab]);
+
   const t = translations[lang];
 
   useEffect(() => {
