@@ -121,7 +121,7 @@ function App() {
       {/* ── HEADER ── */}
       <header className="site-header">
         <div className="site-logo">
-          <span className="logo-dot"></span>
+          <img src="/logo.png" alt="EVFinder Logo" style={{ height: 26, width: 'auto', marginRight: 8, borderRadius: '4px' }} />
           EV<span>Finder</span>
           <span style={{ color: 'rgba(255,255,255,0.15)', margin: '0 8px' }} className="logo-sep">|</span>
           <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-muted)' }} className="logo-sub">
@@ -146,78 +146,80 @@ function App() {
       </header>
 
       {/* ── HERO ── */}
-      <div 
-        className={`hero ${heroVisible ? 'hero-visible' : 'hero-hidden'}`} 
-        ref={heroRef}
-      >
-        <LightningCanvas active={heroVisible} />
-        <div className="hero-container">
-          {/* Left Column: Hero Content */}
-          <div className="hero-content">
-            <div className="hero-label">
-              <Zap size={10} />
-              {t.heroLabel}
+      {activeTab === 'ahp' && (
+        <div 
+          className={`hero ${heroVisible ? 'hero-visible' : 'hero-hidden'}`} 
+          ref={heroRef}
+        >
+          <LightningCanvas active={heroVisible} />
+          <div className="hero-container">
+            {/* Left Column: Hero Content */}
+            <div className="hero-content">
+              <div className="hero-label">
+                <Zap size={10} />
+                {t.heroLabel}
+              </div>
+              <h1>
+                {lang === 'id'
+                  ? <><span style={{ color: 'var(--green)' }}>TEMUKAN</span> MOBIL LISTRIK<br />TERBAIK UNTUKMU</>
+                  : <><span style={{ color: 'var(--green)' }}>FIND</span> YOUR BEST<br />ELECTRIC VEHICLE</>
+                }
+              </h1>
+              <p>{t.heroDesc}</p>
+              <div className="hero-stats">
+                <div className="hero-stat">
+                  <div className="hero-stat-num numeric">{totalVehicles || 281}<span>+</span></div>
+                  <div className="hero-stat-label">{t.heroStat1}</div>
+                </div>
+                <div className="hero-stat">
+                  <div className="hero-stat-num numeric" style={{ color: 'var(--green)' }}>2</div>
+                  <div className="hero-stat-label">{t.heroStat2}</div>
+                </div>
+                <div className="hero-stat">
+                  <div className="hero-stat-num numeric">4</div>
+                  <div className="hero-stat-label">{t.heroStat3}</div>
+                </div>
+              </div>
             </div>
-            <h1>
-              {lang === 'id'
-                ? <><span style={{ color: 'var(--green)' }}>TEMUKAN</span> MOBIL LISTRIK<br />TERBAIK UNTUKMU</>
-                : <><span style={{ color: 'var(--green)' }}>FIND</span> YOUR BEST<br />ELECTRIC VEHICLE</>
-              }
-            </h1>
-            <p>{t.heroDesc}</p>
-            <div className="hero-stats">
-              <div className="hero-stat">
-                <div className="hero-stat-num numeric">{totalVehicles || 281}<span>+</span></div>
-                <div className="hero-stat-label">{t.heroStat1}</div>
-              </div>
-              <div className="hero-stat">
-                <div className="hero-stat-num numeric" style={{ color: 'var(--green)' }}>2</div>
-                <div className="hero-stat-label">{t.heroStat2}</div>
-              </div>
-              <div className="hero-stat">
-                <div className="hero-stat-num numeric">4</div>
-                <div className="hero-stat-label">{t.heroStat3}</div>
+
+            {/* Right Column: Tech Mockup */}
+            <div className="hero-mockup-col">
+              <div className="lightning-wrapper">
+                <PhoneMockup />
               </div>
             </div>
           </div>
 
-          {/* Right Column: Tech Mockup */}
-          <div className="hero-mockup-col">
-            <div className="lightning-wrapper">
-              <PhoneMockup />
+          {/* INFINITE LOOPING MARQUEE TICKER */}
+          <div className="hero-ticker">
+            <div className="ticker-track">
+              <span>{t.price}</span>
+              <span>&bull;</span>
+              <span>{t.range}</span>
+              <span>&bull;</span>
+              <span>{t.topSpeed}</span>
+              <span>&bull;</span>
+              <span>{t.battery}</span>
+              <span>&bull;</span>
+              <span>AHP Model</span>
+              <span>&bull;</span>
+              <span>SAW Rank</span>
+              <span>&bull;</span>
+              <span>{t.price}</span>
+              <span>&bull;</span>
+              <span>{t.range}</span>
+              <span>&bull;</span>
+              <span>{t.topSpeed}</span>
+              <span>&bull;</span>
+              <span>{t.battery}</span>
+              <span>&bull;</span>
+              <span>AHP Model</span>
+              <span>&bull;</span>
+              <span>SAW Rank</span>
             </div>
           </div>
         </div>
-
-        {/* INFINITE LOOPING MARQUEE TICKER */}
-        <div className="hero-ticker">
-          <div className="ticker-track">
-            <span>{t.price}</span>
-            <span>&bull;</span>
-            <span>{t.range}</span>
-            <span>&bull;</span>
-            <span>{t.topSpeed}</span>
-            <span>&bull;</span>
-            <span>{t.battery}</span>
-            <span>&bull;</span>
-            <span>AHP Model</span>
-            <span>&bull;</span>
-            <span>SAW Rank</span>
-            <span>&bull;</span>
-            <span>{t.price}</span>
-            <span>&bull;</span>
-            <span>{t.range}</span>
-            <span>&bull;</span>
-            <span>{t.topSpeed}</span>
-            <span>&bull;</span>
-            <span>{t.battery}</span>
-            <span>&bull;</span>
-            <span>AHP Model</span>
-            <span>&bull;</span>
-            <span>SAW Rank</span>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* ── MAIN ── */}
       <main className="main-layout anim-fade-up-2">

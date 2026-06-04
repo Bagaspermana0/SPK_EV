@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Search, 
   X, 
@@ -62,55 +63,9 @@ const getBrandSearchTerm = (name) => {
 };
 
 const getCarImageUrl = (name) => {
-  const n = name.toLowerCase();
-  
-  // Direct, static, high-quality photo URLs from Unsplash CDN
-  if (n.includes('tesla')) {
-    return 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('porsche')) {
-    return 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('bmw')) {
-    return 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('audi')) {
-    return 'https://images.unsplash.com/photo-1606595885341-b44c3ad9f63d?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('mercedes') || n.includes('eqe') || n.includes('eqs')) {
-    return 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('volkswagen') || n.includes('vw') || n.includes('id.')) {
-    return 'https://images.unsplash.com/photo-1622200294247-926f4a3930ae?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('hyundai') || n.includes('ioniq')) {
-    return 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('kia') || n.includes('ev6') || n.includes('ev9')) {
-    return 'https://images.unsplash.com/photo-1655857202790-b5bfd620573e?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('ford') || n.includes('mustang')) {
-    return 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('polestar')) {
-    return 'https://images.unsplash.com/photo-1620803504825-f7eb80ccab8f?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('nissan') || n.includes('leaf') || n.includes('ariya')) {
-    return 'https://images.unsplash.com/photo-1562620658-9477aa2f89f7?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('byd')) {
-    return 'https://images.unsplash.com/photo-1707036733221-a44b918074d0?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('nio')) {
-    return 'https://images.unsplash.com/photo-1698299105436-1e6fbfa4c585?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('lucid')) {
-    return 'https://images.unsplash.com/photo-1669070092775-3b95a8bfb4eb?auto=format&fit=crop&w=400&q=80';
-  }
-  if (n.includes('rivian')) {
-    return 'https://images.unsplash.com/photo-1669070091877-628b030491fb?auto=format&fit=crop&w=400&q=80';
-  }
-  return 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=400&q=80';
+  const hash = hashCode(name);
+  const index = (Math.abs(hash) % 3) + 1;
+  return `/ev_dummy_${index}.png`;
 };
 
 // ─── Rank badge styles ────────────────────────────────────────────────────────
@@ -275,7 +230,7 @@ const CarModal = ({ car, totalVehicles, lang, t, onClose }) => {
 
   const imgUrl = getCarImageUrl(car.name);
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
 
@@ -391,7 +346,8 @@ const CarModal = ({ car, totalVehicles, lang, t, onClose }) => {
 
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
@@ -488,6 +444,7 @@ const CarCard = ({ car, lang, t, onClick }) => {
 const RankingTable = ({ ranking, totalVehicles, weights, cr, lang, t }) => {
   const [search, setSearch] = useState('');
   const [selectedCar, setSelectedCar] = useState(null);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
 
   const filtered = (ranking || []).filter(car =>
     car.name.toLowerCase().includes(search.toLowerCase())
@@ -510,8 +467,26 @@ const RankingTable = ({ ranking, totalVehicles, weights, cr, lang, t }) => {
           </p>
         </div>
         
-        {/* Monotoned PDF / CSV export buttons */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {/* Toggle & Export buttons */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* View Mode Toggle */}
+          <div className="view-mode-toggle" style={{ marginRight: 8 }}>
+            <button 
+              type="button"
+              onClick={() => setViewMode('grid')} 
+              className={`toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+            >
+              Card Grid
+            </button>
+            <button 
+              type="button"
+              onClick={() => setViewMode('table')} 
+              className={`toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+            >
+              Tabel
+            </button>
+          </div>
+
           <button 
             onClick={() => exportToCSV(ranking, t)} 
             className="btn btn-outline" 
@@ -550,19 +525,63 @@ const RankingTable = ({ ranking, totalVehicles, weights, cr, lang, t }) => {
         )}
       </div>
 
-      {/* Leaders Grid */}
+      {/* Conditional Rendering based on viewMode */}
       {filtered.length > 0 ? (
-        <div className="cars-grid">
-          {filtered.map((car) => (
-            <CarCard 
-              key={car.rank} 
-              car={car} 
-              lang={lang}
-              t={t}
-              onClick={handleOpenModal} 
-            />
-          ))}
-        </div>
+        viewMode === 'grid' ? (
+          <div className="cars-grid">
+            {filtered.map((car) => (
+              <CarCard 
+                key={car.rank} 
+                car={car} 
+                lang={lang}
+                t={t}
+                onClick={handleOpenModal} 
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="table-responsive glass-card" style={{ padding: 0, overflowX: 'auto', border: '1px solid var(--glass-border)' }}>
+            <table className="results-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr>
+                  <th style={{ width: '80px' }}>Rank</th>
+                  <th>Nama Mobil Listrik</th>
+                  <th>Harga</th>
+                  <th>Jarak</th>
+                  <th>Top Speed</th>
+                  <th>Kapasitas Baterai</th>
+                  <th>Skor SAW</th>
+                  <th style={{ textAlign: 'center', width: '80px' }}>Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((car) => (
+                  <tr 
+                    key={car.rank} 
+                    className="table-row-hover" 
+                    onClick={() => handleOpenModal(car)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td className="numeric" style={{ fontWeight: 'bold', color: car.rank === 1 ? 'var(--amber)' : car.rank === 2 ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                      #{car.rank}
+                    </td>
+                    <td style={{ fontWeight: '700', color: 'var(--text-primary)' }}>{car.name}</td>
+                    <td className="numeric">€{car.price.toLocaleString('de-DE')}</td>
+                    <td className="numeric">{car.range} km</td>
+                    <td className="numeric">{car.top_speed} km/h</td>
+                    <td className="numeric">{car.battery} kWh</td>
+                    <td>
+                      <span className="table-score-badge">{(car.score * 100).toFixed(2)}%</span>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <ExternalLink size={12} style={{ color: 'var(--green)' }} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       ) : (
         <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: '0.85rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           {t.sawNoResults} "<em>{search}</em>"

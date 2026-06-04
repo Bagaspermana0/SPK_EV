@@ -2122,6 +2122,97 @@ a:hover {
 }
 
 /* ==========================================================================
+   VIEW TOGGLE & TABLE VIEW STYLES
+   ========================================================================== */
+
+.view-mode-toggle {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--glass-border);
+  padding: 2px;
+}
+
+.view-mode-toggle .toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.view-mode-toggle .toggle-btn.active {
+  background: var(--glass-border-hover);
+  color: var(--green);
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 10px;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.results-table th, 
+.results-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--glass-border);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.results-table th {
+  background: rgba(255, 255, 255, 0.01);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.results-table tr:last-child td {
+  border-bottom: none;
+}
+
+.table-row-hover {
+  transition: background 0.2s ease;
+}
+
+.table-row-hover:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.table-score-badge {
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1px solid rgba(0, 217, 126, 0.2);
+  padding: 3px 8px;
+  font-weight: 700;
+  font-family: monospace;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 768px) {
+  .results-table th, 
+  .results-table td {
+    padding: 10px 8px;
+    font-size: 0.7rem;
+  }
+  .table-score-badge {
+    padding: 2px 4px;
+    font-size: 0.68rem;
+  }
+}
+
+/* ==========================================================================
    PRINT MEDIA STYLES
    ========================================================================== */
 
