@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { translations } from './translations';
 import AHPForm from './components/AHPForm';
 import RankingTable from './components/RankingTable';
 import Charts from './components/Charts';
+import LightningCanvas from './components/LightningCanvas';
 import { Zap, BarChart2, List, Lock, CircleDollarSign, Battery, Cpu } from 'lucide-react';
 
 const getApiBaseUrl = () => {
@@ -26,6 +27,27 @@ function App() {
   const [loadingSAW, setLoadingSAW] = useState(false);
   const [activeTab, setActiveTab] = useState('ahp');
   const [backendOnline, setBackendOnline] = useState(false);
+  const [heroVisible, setHeroVisible] = useState(false);
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setHeroVisible(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentHero = heroRef.current;
+    if (currentHero) {
+      observer.observe(currentHero);
+    }
+    return () => {
+      if (currentHero) {
+        observer.unobserve(currentHero);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -123,30 +145,55 @@ function App() {
       </header>
 
       {/* ── HERO ── */}
-      <div className="hero anim-fade-up-1">
-        <div className="hero-label">
-          <Zap size={10} />
-          {t.heroLabel}
-        </div>
-        <h1>
-          {lang === 'id'
-            ? <><span style={{ color: 'var(--green)' }}>TEMUKAN</span> MOBIL LISTRIK<br />TERBAIK UNTUKMU</>
-            : <><span style={{ color: 'var(--green)' }}>FIND</span> YOUR BEST<br />ELECTRIC VEHICLE</>
-          }
-        </h1>
-        <p>{t.heroDesc}</p>
-        <div className="hero-stats">
-          <div className="hero-stat">
-            <div className="hero-stat-num numeric">{totalVehicles || 281}<span>+</span></div>
-            <div className="hero-stat-label">{t.heroStat1}</div>
+      <div 
+        className={`hero ${heroVisible ? 'hero-visible' : 'hero-hidden'}`} 
+        ref={heroRef}
+      >
+        <div className="hero-container">
+          {/* Left Column: Hero Content */}
+          <div className="hero-content">
+            <div className="hero-label">
+              <Zap size={10} />
+              {t.heroLabel}
+            </div>
+            <h1>
+              {lang === 'id'
+                ? <><span style={{ color: 'var(--green)' }}>TEMUKAN</span> MOBIL LISTRIK<br />TERBAIK UNTUKMU</>
+                : <><span style={{ color: 'var(--green)' }}>FIND</span> YOUR BEST<br />ELECTRIC VEHICLE</>
+              }
+            </h1>
+            <p>{t.heroDesc}</p>
+            <div className="hero-stats">
+              <div className="hero-stat">
+                <div className="hero-stat-num numeric">{totalVehicles || 281}<span>+</span></div>
+                <div className="hero-stat-label">{t.heroStat1}</div>
+              </div>
+              <div className="hero-stat">
+                <div className="hero-stat-num numeric" style={{ color: 'var(--green)' }}>2</div>
+                <div className="hero-stat-label">{t.heroStat2}</div>
+              </div>
+              <div className="hero-stat">
+                <div className="hero-stat-num numeric">4</div>
+                <div className="hero-stat-label">{t.heroStat3}</div>
+              </div>
+            </div>
           </div>
-          <div className="hero-stat">
-            <div className="hero-stat-num numeric" style={{ color: 'var(--green)' }}>2</div>
-            <div className="hero-stat-label">{t.heroStat2}</div>
-          </div>
-          <div className="hero-stat">
-            <div className="hero-stat-num numeric">4</div>
-            <div className="hero-stat-label">{t.heroStat3}</div>
+
+          {/* Right Column: Tech Mockup */}
+          <div className="hero-mockup-col">
+            <div className="lightning-wrapper">
+              <LightningCanvas active={heroVisible} />
+              <div className="phone-mockup-wrapper">
+                <div className="phone-notch">
+                  <div className="speaker-bar" />
+                  <div className="camera-lens" />
+                </div>
+                <div 
+                  className="phone-screen" 
+                  style={{ backgroundImage: `url('/phone_mockup.png')` }}
+                />
+              </div>
+            </div>
           </div>
         </div>
 

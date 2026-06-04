@@ -434,6 +434,60 @@ a:hover {
   border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 
+.hero-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 48px;
+  width: 100%;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 968px) {
+  .hero-container {
+    flex-direction: column;
+    text-align: center;
+    gap: 40px;
+  }
+}
+
+.hero-content {
+  flex: 1.2;
+}
+
+.hero-mockup-col {
+  flex: 0.8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Visibility animations triggered on scroll */
+.hero-content, .hero-mockup-col {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-visible .hero-content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero-visible .hero-mockup-col {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.15s;
+}
+
+.hero-hidden .hero-content,
+.hero-hidden .hero-mockup-col {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: none; /* Instant reset when scrolled out of view */
+}
+
 .hero-label {
   display: inline-flex;
   align-items: center;
@@ -450,7 +504,7 @@ a:hover {
 
 .hero h1 {
   margin-bottom: 16px;
-  max-width: 750px;
+  max-width: 100%;
 }
 
 .hero h1 span {
@@ -463,6 +517,16 @@ a:hover {
   color: var(--text-secondary);
   max-width: 650px;
   margin-bottom: 32px;
+}
+
+@media (max-width: 968px) {
+  .hero p {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero-stats {
+    justify-content: center;
+  }
 }
 
 .hero-stats {
@@ -493,6 +557,100 @@ a:hover {
   letter-spacing: 0.08em;
   color: var(--text-muted);
   margin-top: 2px;
+}
+
+/* Lightning Canvas & Phone container */
+.lightning-wrapper {
+  position: relative;
+  width: 320px;
+  height: 540px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at center, rgba(0, 217, 126, 0.03) 0%, rgba(59, 130, 246, 0.03) 30%, transparent 70%);
+}
+
+@media (max-width: 968px) {
+  .lightning-wrapper {
+    width: 280px;
+    height: 480px;
+  }
+}
+
+/* Phone Mockup Styling */
+.phone-mockup-wrapper {
+  position: relative;
+  width: 240px;
+  height: 480px;
+  background: #030712;
+  border: 10px solid #101f36;
+  border-radius: 36px;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.7),
+    0 0 20px rgba(0, 217, 126, 0.12),
+    0 0 40px rgba(59, 130, 246, 0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease;
+  z-index: 1;
+}
+
+.phone-mockup-wrapper:hover {
+  transform: translateY(-8px) rotate(-1deg) scale(1.02);
+  box-shadow: 
+    0 35px 60px -10px rgba(0, 0, 0, 0.85),
+    0 0 35px rgba(0, 217, 126, 0.25),
+    0 0 55px rgba(59, 130, 246, 0.15);
+}
+
+@media (max-width: 968px) {
+  .phone-mockup-wrapper {
+    width: 210px;
+    height: 420px;
+    border-radius: 28px;
+    border-width: 8px;
+  }
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+.phone-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 16px;
+  background: #101f36;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.speaker-bar {
+  width: 24px;
+  height: 2px;
+  background: #374151;
+  border-radius: 1px;
+}
+
+.camera-lens {
+  width: 5px;
+  height: 5px;
+  background: #090d16;
+  border-radius: 50%;
 }
 
 /* MAIN LAYOUT */
