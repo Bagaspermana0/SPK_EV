@@ -13,3 +13,9 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'connect_args': {
+            'connect_timeout': int(os.getenv('DB_CONNECT_TIMEOUT', '10'))
+        }
+    }

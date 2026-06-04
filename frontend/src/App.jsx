@@ -7,18 +7,10 @@ import Charts from './components/Charts';
 import { Zap, BarChart2, List, Lock, CircleDollarSign, Battery, Cpu } from 'lucide-react';
 
 const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_URL !== undefined) {
-    return import.meta.env.VITE_API_URL;
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/$/, '');
   }
-  if (import.meta.env.PROD) {
-    return '';
-  }
-  // If accessing from a mobile device or other host on local network
-  const hostname = window.location.hostname;
-  if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '0.0.0.0') {
-    return `http://${hostname}:5000`;
-  }
-  return 'http://localhost:5000';
+  return '';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -33,6 +25,7 @@ function App() {
   const [totalVehicles, setTotalVehicles] = useState(0);
   const [loadingSAW, setLoadingSAW] = useState(false);
   const [activeTab, setActiveTab] = useState('ahp');
+  const [backendOnline, setBackendOnline] = useState(false);
 
   const t = translations[lang];
 
@@ -40,10 +33,19 @@ function App() {
     const fetchVehiclesCount = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/api/vehicles`);
-        if (response.data && Array.isArray(response.data)) {
-          setTotalVehicles(response.data.length);
+        const vehicles = Array.isArray(response.data)
+          ? response.data
+          : response.data?.vehicles;
+
+        if (Array.isArray(vehicles)) {
+          setTotalVehicles(vehicles.length);
+          setBackendOnline(true);
+        } else if (typeof response.data?.count === 'number') {
+          setTotalVehicles(response.data.count);
+          setBackendOnline(true);
         }
       } catch {
+        setBackendOnline(false);
         setTotalVehicles(281);
       }
     };
@@ -70,13 +72,15 @@ function App() {
       if (response.data.success) {
         setRanking(response.data.top_10);
         setTotalVehicles(response.data.total_vehicles);
+        setBackendOnline(true);
         setActiveTab('results');
       }
     } catch (err) {
       console.error(err);
+      setBackendOnline(false);
       alert(lang === 'id'
-        ? `Koneksi ke backend Flask terputus. Pastikan Flask berjalan di ${API_BASE_URL}`
-        : `Flask backend unreachable. Verify Flask is running on ${API_BASE_URL}`);
+        ? 'Koneksi ke backend Flask terputus. Pastikan Flask berjalan di port 5000, lalu akses frontend lewat alamat Vite yang sama.'
+        : 'Flask backend unreachable. Verify Flask is running on port 5000, then access the frontend from the same Vite address.');
     } finally {
       setLoadingSAW(false);
     }
@@ -106,7 +110,7 @@ function App() {
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <span style={{ width: 6, height: 6, background: 'var(--green)', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 6px var(--green)' }}></span>
             <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 700, fontFamily: 'monospace' }}>
-              {totalVehicles > 0 ? `${totalVehicles} EV` : 'Live'}
+              {backendOnline && totalVehicles > 0 ? `${totalVehicles} EV` : 'Offline'}
             </span>
           </div>
         </div>
@@ -144,27 +148,27 @@ function App() {
         <div className="hero-ticker">
           <div className="ticker-track">
             <span>{t.price}</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>{t.range}</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>{t.topSpeed}</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>{t.battery}</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>AHP Model</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>SAW Rank</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>{t.price}</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>{t.range}</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>{t.topSpeed}</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>{t.battery}</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>AHP Model</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>SAW Rank</span>
           </div>
         </div>
@@ -224,7 +228,7 @@ function App() {
                       <span style={{ background: 'var(--green)', width: 16, height: 2, display: 'inline-block' }}></span>
                       {t.sidebarWeightTitle}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px' }}>
+                    <div className="weight-summary-grid">
                       {[
                         { key: 'price',     label: t.price,    icon: <CircleDollarSign size={13} style={{ color: 'var(--amber)' }} /> },
                         { key: 'range',     label: t.range,    icon: <Battery size={13} style={{ color: 'var(--green)' }} /> },
@@ -242,7 +246,7 @@ function App() {
                         </div>
                       ))}
                     </div>
-                    <div className="sidebar-summary-total" style={{ marginTop: 12 }}>Total: 100% ✓</div>
+                    <div className="sidebar-summary-total" style={{ marginTop: 12 }}>Total: 100% OK</div>
                   </div>
 
                   <button
@@ -319,7 +323,7 @@ function App() {
             {ranking && (
               <div style={{ marginTop: 28, display: 'flex', gap: 12, justifyContent: 'center' }}>
                 <button className="btn btn-outline" onClick={() => setActiveTab('ahp')}>
-                  ← {t.tab1}
+                  &larr; {t.tab1}
                 </button>
                 <button className="btn btn-green" onClick={() => setActiveTab('charts')}>
                   <List size={14} />
@@ -336,7 +340,7 @@ function App() {
             <Charts ranking={ranking} weights={weights} lang={lang} t={t} />
             <div style={{ marginTop: 28, display: 'flex', gap: 12, justifyContent: 'center' }}>
               <button className="btn btn-outline" onClick={() => setActiveTab('results')}>
-                ← {t.tab2}
+                &larr; {t.tab2}
               </button>
             </div>
           </div>

@@ -81,6 +81,15 @@ body {
   overflow-x: hidden;
 }
 
+button,
+input {
+  font: inherit;
+}
+
+button {
+  min-width: 0;
+}
+
 /* Noise overlay for micro texture */
 body::before {
   content: '';
@@ -357,6 +366,7 @@ a:hover {
   justify-content: space-between;
   align-items: center;
   padding: 0 32px;
+  gap: 16px;
 }
 
 .site-logo {
@@ -369,6 +379,8 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .logo-dot {
@@ -415,6 +427,7 @@ a:hover {
 /* HERO SECTION */
 .hero {
   padding: 64px 32px 56px 32px;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
@@ -484,6 +497,7 @@ a:hover {
 
 /* MAIN LAYOUT */
 .main-layout {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 32px 80px 32px;
@@ -554,6 +568,7 @@ a:hover {
   transition: all 0.25s ease;
   position: relative;
   text-align: center;
+  min-width: 0;
 }
 
 .step-tab:hover:not(:disabled) {
@@ -643,6 +658,7 @@ a:hover {
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  gap: 12px;
 }
 
 .comparison-desc {
@@ -693,6 +709,12 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+
+.criteria-name-left,
+.criteria-name-right {
+  overflow-wrap: anywhere;
 }
 
 .criteria-left {
@@ -829,6 +851,7 @@ a:hover {
   justify-content: space-between;
   font-size: var(--font-sm);
   margin-bottom: 4px;
+  gap: 10px;
 }
 
 .weight-bar-label {
@@ -838,6 +861,14 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.weight-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
 }
 
 .weight-bar-pct {
@@ -886,6 +917,7 @@ a:hover {
   display: flex;
   flex-direction: column;
   padding: 0; /* image must start flush at top */
+  min-width: 0;
 }
 
 .car-card:hover {
@@ -1065,6 +1097,8 @@ a:hover {
   position: relative;
   clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 0 100%);
   animation: fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
 }
 
 .modal-close {
@@ -1256,6 +1290,21 @@ a:hover {
 @media (max-width: 640px) {
   .site-header {
     padding: 0 16px;
+    height: auto;
+    min-height: 64px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 14px;
+    padding-block: 10px;
+  }
+
+  .site-header > div:last-child {
+    gap: 10px !important;
+    max-width: 100%;
+  }
+
+  .site-logo {
+    font-size: 0.95rem;
   }
   
   .logo-sep, .logo-sub {
@@ -1268,6 +1317,7 @@ a:hover {
 
   .hero h1 {
     font-size: var(--font-2xl);
+    overflow-wrap: anywhere;
   }
 
   .hero p {
@@ -1275,8 +1325,13 @@ a:hover {
   }
 
   .hero-stats {
-    flex-wrap: wrap;
-    gap: 20px 32px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .hero-stat-num {
+    font-size: 1.45rem;
   }
 
   .main-layout {
@@ -1296,6 +1351,7 @@ a:hover {
     flex-direction: column;
     gap: 6px;
     letter-spacing: 0.02em;
+    overflow-wrap: anywhere;
   }
 
   .step-tab .step-num {
@@ -1337,6 +1393,32 @@ a:hover {
     font-size: 0.85rem !important;
   }
 
+  .comparison-header {
+    align-items: flex-start;
+  }
+
+  .criteria-name {
+    flex: 1 1 0;
+    line-height: 1.25;
+  }
+
+  .criteria-right {
+    text-align: right;
+  }
+
+  .weight-summary-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .btn {
+    width: 100%;
+    min-height: 44px;
+    padding-inline: 14px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .cars-grid {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -1354,6 +1436,16 @@ a:hover {
   .modal {
     max-height: 95vh;
     overflow-y: auto;
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .modal-score-section {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
   }
 
   .modal-specs-grid {

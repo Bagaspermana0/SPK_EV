@@ -40,8 +40,12 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    print("Flask app running on http://localhost:5000")
-    print("API ready at http://localhost:5000/api/health")
+    if os.getenv('INIT_DB_ON_STARTUP', '').lower() in {'1', 'true', 'yes'}:
+        try:
+            with app.app_context():
+                db.create_all()
+        except Exception as exc:
+            print(f"Database init skipped: {exc}")
+    print("Flask app running on http://0.0.0.0:5000")
+    print("API ready at http://127.0.0.1:5000/api/health")
     app.run(debug=True, host='0.0.0.0', port=5000)
