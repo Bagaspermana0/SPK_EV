@@ -842,6 +842,7 @@ a:hover {
   position: relative;
   display: flex;
   flex-direction: column;
+  padding: 0; /* image must start flush at top */
 }
 
 .car-card:hover {
