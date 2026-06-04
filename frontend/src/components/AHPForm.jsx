@@ -283,7 +283,7 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
 
       {/* FORM OF PAIRWISE COMPARISONS */}
       <form onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: 28 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: 28 }}>
           {PAIRS.map(([i, j], idx) => {
             const pos = sliders[idx];
             const isLeftDom = pos < 9;
@@ -294,18 +294,13 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
                 className={`comparison-row ${isLeftDom ? 'criteria-active-left' : isRightDom ? 'criteria-active-right' : ''}`} 
                 key={idx}
               >
-                <div className="criteria-labels">
+                <div className="comparison-header">
                   {/* Left Label */}
                   <div className="criteria-name criteria-left">
                     <span className="criteria-icon-box criteria-icon-left">
                       {CRITERIA[i].icon}
                     </span>
                     <span className="criteria-name-left">{t[CRITERIA[i].labelKey]}</span>
-                  </div>
-
-                  {/* Dynamic comparison natural description */}
-                  <div className="slider-current-text" style={{ color: pos === 9 ? 'var(--text-muted)' : isLeftDom ? 'var(--green)' : 'var(--blue)' }}>
-                    {getComparisonText(i, j, pos)}
                   </div>
 
                   {/* Right Label */}
@@ -315,6 +310,11 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
                       {CRITERIA[j].icon}
                     </span>
                   </div>
+                </div>
+
+                {/* Dynamic comparison natural description */}
+                <div className="comparison-desc" style={{ color: pos === 9 ? 'var(--text-muted)' : isLeftDom ? 'var(--green)' : 'var(--blue)' }}>
+                  {getComparisonText(i, j, pos)}
                 </div>
 
                 {/* Range Input element */}
@@ -348,11 +348,6 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
                     >
                       &rarr;
                     </button>
-                  </div>
-                  <div className="slider-value-display">
-                    <span>{t[CRITERIA[i].labelKey]}</span>
-                    <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>Sama / Equal</span>
-                    <span style={{ textAlign: 'right' }}>{t[CRITERIA[j].labelKey]}</span>
                   </div>
                 </div>
               </div>

@@ -6,7 +6,22 @@ import RankingTable from './components/RankingTable';
 import Charts from './components/Charts';
 import { Zap, BarChart2, List, Lock, CircleDollarSign, Battery, Cpu } from 'lucide-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL !== undefined) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (import.meta.env.PROD) {
+    return '';
+  }
+  // If accessing from a mobile device or other host on local network
+  const hostname = window.location.hostname;
+  if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '0.0.0.0') {
+    return `http://${hostname}:5000`;
+  }
+  return 'http://localhost:5000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 function App() {
   const [lang, setLang] = useState(() => {

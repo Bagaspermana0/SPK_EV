@@ -176,10 +176,10 @@ const exportToPDF = (ranking, weights, cr, lang, t) => {
     <div class="weights-box">
       <strong>${lang === 'id' ? 'Parameter Analisis AHP:' : 'AHP Analysis Parameters:'}</strong><br/>
       <div style="margin-top: 8px;">
-        <span class="weight-item">💰 ${t.price}: <strong>${(weights.price * 100).toFixed(1)}%</strong></span>
-        <span class="weight-item">🔋 ${t.range}: <strong>${(weights.range * 100).toFixed(1)}%</strong></span>
-        <span class="weight-item">⚡ ${t.topSpeed}: <strong>${(weights.top_speed * 100).toFixed(1)}%</strong></span>
-        <span class="weight-item">📦 ${t.battery}: <strong>${(weights.battery * 100).toFixed(1)}%</strong></span>
+        <span class="weight-item">${t.price}: <strong>${(weights.price * 100).toFixed(1)}%</strong></span>
+        <span class="weight-item">${t.range}: <strong>${(weights.range * 100).toFixed(1)}%</strong></span>
+        <span class="weight-item">${t.topSpeed}: <strong>${(weights.top_speed * 100).toFixed(1)}%</strong></span>
+        <span class="weight-item">${t.battery}: <strong>${(weights.battery * 100).toFixed(1)}%</strong></span>
       </div>
       <div style="margin-top: 8px; font-size: 0.82rem; color: #475569;">
         Consistency Ratio (CR): <strong>${cr !== null && cr !== undefined ? cr.toFixed(4) : 'N/A'}</strong>
