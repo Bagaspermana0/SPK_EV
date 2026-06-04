@@ -1,0 +1,49 @@
+from flask import Flask, jsonify
+from flask_cors import CORS
+from config import Config
+from models import db
+from routes.ahp_routes import ahp_bp
+from routes.saw_routes import saw_bp
+from routes.vehicle_routes import vehicle_bp
+import os
+
+def create_app():
+    app = Flask(__name__)
+    
+    # Config
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+        'DATABASE_URL',
+        'postgresql://postgres:pemalang123@localhost:5432/spk_mobil_listrik'
+    )
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Init DB
+    db.init_app(app)
+    
+    # CORS
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": ["http://localhost:3000", "http://localhost:5173", "http://localhost"],
+            "methods": ["GET", "POST", "OPTIONS"]
+        }
+    })
+    
+    # Blueprints
+    app.register_blueprint(ahp_bp)
+    app.register_blueprint(saw_bp)
+    app.register_blueprint(vehicle_bp)
+    
+    # Health check
+    @app.route('/api/health', methods=['GET'])
+    def health():
+        return jsonify({'status': 'ok', 'timestamp': str(__import__('datetime').datetime.now())}), 200
+    
+    return app
+
+if __name__ == '__main__':
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+    print("Flask app running on http://localhost:5000")
+    print("API ready at http://localhost:5000/api/health")
+    app.run(debug=True, host='0.0.0.0', port=5000)
