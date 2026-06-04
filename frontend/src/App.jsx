@@ -73,8 +73,8 @@ function App() {
         <div className="site-logo">
           <span className="logo-dot"></span>
           EV<span>Finder</span>
-          <span style={{ color: 'rgba(255,255,255,0.15)', margin: '0 8px' }}>|</span>
-          <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-muted)' }}>
+          <span style={{ color: 'rgba(255,255,255,0.15)', margin: '0 8px' }} className="logo-sep">|</span>
+          <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-muted)' }} className="logo-sub">
             {t.navTitle}
           </span>
         </div>

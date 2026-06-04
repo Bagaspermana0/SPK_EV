@@ -229,7 +229,7 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
               >
                 <div className="criteria-labels">
                   {/* Left Label */}
-                  <div className="criteria-name" style={{ justifyContent: 'flex-start' }}>
+                  <div className="criteria-name criteria-left">
                     <span className="criteria-icon-box criteria-icon-left">
                       {CRITERIA[i].icon}
                     </span>
@@ -242,7 +242,7 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
                   </div>
 
                   {/* Right Label */}
-                  <div className="criteria-name" style={{ justifyContent: 'flex-end' }}>
+                  <div className="criteria-name criteria-right">
                     <span className="criteria-name-right">{t[CRITERIA[j].labelKey]}</span>
                     <span className="criteria-icon-box criteria-icon-right">
                       {CRITERIA[j].icon}
