@@ -78,9 +78,11 @@ function App() {
     } catch (err) {
       console.error(err);
       setBackendOnline(false);
+      const serverMessage = err.response?.data?.error || err.response?.data?.message;
+      const status = err.response?.status;
       alert(lang === 'id'
-        ? 'Koneksi ke backend Flask terputus. Pastikan Flask berjalan di port 5000, lalu akses frontend lewat alamat Vite yang sama.'
-        : 'Flask backend unreachable. Verify Flask is running on port 5000, then access the frontend from the same Vite address.');
+        ? `API rekomendasi belum bisa diakses${status ? ` (HTTP ${status})` : ''}.${serverMessage ? `\n\nDetail: ${serverMessage}` : '\n\nKalau ini terjadi di Vercel, pastikan deployment terbaru sudah aktif dan DATABASE_URL Neon sudah terisi.'}`
+        : `Recommendation API is unreachable${status ? ` (HTTP ${status})` : ''}.${serverMessage ? `\n\nDetail: ${serverMessage}` : '\n\nIf this happens on Vercel, make sure the latest deployment is active and the Neon DATABASE_URL is set.'}`);
     } finally {
       setLoadingSAW(false);
     }
