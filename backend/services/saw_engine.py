@@ -16,9 +16,15 @@ class SAWEngine:
         for col in ['price', 'range', 'top_speed', 'battery']:
             if col in self.cost_criteria:
                 min_val = self.df[col].min()
+                # Check for zero or negative values in cost criteria to prevent division by zero or invalid normalizations
+                if (self.df[col] <= 0).any():
+                    raise ValueError(f"Kriteria cost '{col}' mengandung nilai nol atau negatif, normalisasi SAW tidak dapat dihitung.")
                 self.normalized[col] = min_val / self.df[col]
             else:
                 max_val = self.df[col].max()
+                # Check if max value of benefit criteria is zero or negative
+                if max_val <= 0:
+                    raise ValueError(f"Kriteria benefit '{col}' memiliki nilai maksimum nol atau negatif, normalisasi SAW tidak dapat dihitung.")
                 self.normalized[col] = self.df[col] / max_val
         
         return self.normalized

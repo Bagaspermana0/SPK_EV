@@ -84,9 +84,7 @@ const Charts = ({ ranking, weights }) => {
           font: { family: 'Barlow Condensed, sans-serif', size: 10, weight: '700' },
           callback: (v) => `${v}%`
         },
-        border: { display: false },
-        min: 0,
-        max: 100
+        border: { display: false }
       }
     }
   };

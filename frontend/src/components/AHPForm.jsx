@@ -27,14 +27,31 @@ const sliderToAHP = (pos) => {
 };
 
 const ahpLabel = (pos) => {
-  const v = sliderToAHP(pos);
   if (pos === 9) return 'Sama Penting';
-  if (pos < 9) {
-    const labels = ['','','','Mutlak Kurang','','Sangat Kurang','','Kurang','Sedikit Kurang'];
-    return labels[pos] || `1/${10 - pos}×`;
-  }
-  const labels = ['','Sedikit Lebih','','Lebih Penting','','Sangat Lebih','','Jauh Lebih','Mutlak Lebih'];
-  return labels[pos - 9] || `${pos - 8}×`;
+  
+  const labels = {
+    1: 'Mutlak Kurang',
+    2: 'Sangat Jauh Kurang',
+    3: 'Jauh Kurang',
+    4: 'Lebih Kurang',
+    5: 'Sangat Kurang',
+    6: 'Cukup Kurang',
+    7: 'Kurang Penting',
+    8: 'Sedikit Kurang',
+    10: 'Sedikit Lebih',
+    11: 'Cukup Lebih',
+    12: 'Lebih Penting',
+    13: 'Sangat Lebih',
+    14: 'Lebih Utama',
+    15: 'Jauh Lebih',
+    16: 'Sangat Jauh Lebih',
+    17: 'Mutlak Lebih'
+  };
+
+  const factor = pos < 9 ? (10 - pos) : (pos - 8);
+  const suffix = pos < 9 ? `1/${factor}×` : `${factor}×`;
+  
+  return labels[pos] ? `${labels[pos]} (${suffix})` : `${suffix}`;
 };
 
 const buildMatrix = (sliders) => {
@@ -105,7 +122,7 @@ const AHPForm = ({ onWeightsCalculated }) => {
       setWeights(data.weights);
 
       if (data.is_consistent) {
-        onWeightsCalculated(data.weights);
+        onWeightsCalculated(data.weights, data.cr);
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.55 }, colors: ['#00C46A', '#0066FF', '#00C8D4'] });
       } else {
         setError(`Matriks tidak konsisten (CR = ${data.cr?.toFixed(4)}). Coba sesuaikan kembali perbandingan.`);

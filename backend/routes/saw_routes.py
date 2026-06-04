@@ -11,12 +11,16 @@ def rank_vehicles():
     
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'Data JSON tidak boleh kosong'}), 400
+            
         weights = data.get('weights')
         
-        if not weights or len(weights) != 4:
+        required_keys = {'price', 'range', 'top_speed', 'battery'}
+        if not weights or set(weights.keys()) != required_keys:
             return jsonify({
                 'success': False,
-                'error': 'Weights harus 4 kriteria'
+                'error': 'Bobot kriteria tidak valid. Harus mengandung kriteria: price, range, top_speed, battery.'
             }), 400
         
         weight_sum = sum(weights.values())
@@ -44,7 +48,12 @@ def rank_vehicles():
             'statistics': result['statistics'],
             'total_vehicles': result['statistics']['total']
         }), 200
-    
+        
+    except ValueError as ve:
+        return jsonify({
+            'success': False,
+            'error': str(ve)
+        }), 400
     except Exception as e:
         return jsonify({
             'success': False,
@@ -59,14 +68,37 @@ def sensitivity_analysis():
     
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'Data JSON tidak boleh kosong'}), 400
+            
         scenarios = data.get('scenarios', [])
         
         vehicles = Vehicle.query.all()
+        if not vehicles:
+            return jsonify({
+                'success': False,
+                'error': 'No vehicles in database'
+            }), 404
         vehicles_data = [v.to_dict() for v in vehicles]
         
+        required_keys = {'price', 'range', 'top_speed', 'battery'}
         results = {}
-        for scenario in scenarios:
-            saw = SAWEngine(vehicles_data, scenario['weights'])
+        for i, scenario in enumerate(scenarios):
+            w = scenario.get('weights')
+            if not w or set(w.keys()) != required_keys:
+                return jsonify({
+                    'success': False,
+                    'error': f"Skenario ke-{i+1} ('{scenario.get('name', 'Tanpa Nama')}') memiliki bobot kriteria tidak valid."
+                }), 400
+            
+            weight_sum = sum(w.values())
+            if abs(weight_sum - 1.0) > 0.01:
+                return jsonify({
+                    'success': False,
+                    'error': f"Jumlah bobot skenario '{scenario.get('name')}' harus = 1.0, tapi = {weight_sum:.4f}"
+                }), 400
+                
+            saw = SAWEngine(vehicles_data, w)
             result = saw.compute()
             results[scenario['name']] = result['top_10']
         
@@ -74,7 +106,12 @@ def sensitivity_analysis():
             'success': True,
             'scenarios': results
         }), 200
-    
+        
+    except ValueError as ve:
+        return jsonify({
+            'success': False,
+            'error': str(ve)
+        }), 400
     except Exception as e:
         return jsonify({
             'success': False,

@@ -2,19 +2,26 @@ import os
 import re
 import pandas as pd
 from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Database config
-DB_USER = 'postgres'
-DB_PASSWORD = os.environ.get('DB_PASSWORD', '')  # We will read from prompt if empty
-DB_HOST = 'localhost'
-DB_PORT = 5432
-DB_NAME = 'spk_mobil_listrik'
+DB_URL = os.getenv('DATABASE_URL')
+if not DB_URL:
+    DB_USER = os.getenv('DB_USER', 'postgres')
+    DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+    DB_HOST = os.getenv('DB_HOST', 'localhost')
+    DB_PORT = os.getenv('DB_PORT', '5432')
+    DB_NAME = os.getenv('DB_NAME', 'spk_mobil_listrik')
 
-# Prompt password if not set
-if not DB_PASSWORD:
-    DB_PASSWORD = input("Masukkan password PostgreSQL Anda: ")
+    # Prompt password if not set
+    if not DB_PASSWORD:
+        DB_PASSWORD = input("Masukkan password PostgreSQL Anda: ")
 
-DB_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    DB_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 
 def parse_price(val):
     if pd.isna(val) or str(val).strip() == 'N/A':
@@ -44,7 +51,7 @@ def parse_battery(val):
     return float(match.group(1)) if match else None
 
 try:
-    print("📊 Loading data from CSV...")
+    print("[INFO] Loading data from CSV...")
     df = pd.read_csv('electric_cars.csv')
     
     # Process columns
@@ -63,24 +70,29 @@ try:
     # Remove duplicates
     df = df.drop_duplicates(subset=['name'], keep='first')
     
-    print(f"✅ CSV loaded and cleaned: {len(df)} vehicles")
+    print(f"[OK] CSV loaded and cleaned: {len(df)} vehicles")
     
     # Connect to database
     engine = create_engine(DB_URL)
     
+    # Truncate existing table to prevent duplicate unique key crashes on re-run
+    print("[DB] Truncating existing vehicles data...")
+    with engine.begin() as conn:
+        conn.execute(text("TRUNCATE TABLE vehicles CASCADE;"))
+    
     # Insert data
     df.to_sql('vehicles', engine, if_exists='append', index=False)
-    print(f"✅ Data successfully loaded to database: {len(df)} vehicles")
+    print(f"[OK] Data successfully loaded to database: {len(df)} vehicles")
     
     # Verify
     with engine.connect() as conn:
         result = conn.execute(text("SELECT COUNT(*) FROM vehicles;"))
         count = result.fetchone()[0]
-        print(f"✅ Total vehicles in database: {count}")
+        print(f"[OK] Total vehicles in database: {count}")
         
         # Show first 3 rows
         result = conn.execute(text("SELECT * FROM vehicles LIMIT 3;"))
-        print("\n📋 Sample data:")
+        print("\n[DATA] Sample data:")
         for row in result:
             # row is tuple: (id, name, price, range, top_speed, battery, created_at)
             # row index matches column positions:
@@ -88,4 +100,4 @@ try:
             print(f"   - {row[1]}: €{row[2]:.0f} | Range: {row[3]} km | Top Speed: {row[4]} km/h | Battery: {row[5]} kWh")
 
 except Exception as e:
-    print(f"❌ ERROR: {e}")
+    print(f"[ERROR] {e}")

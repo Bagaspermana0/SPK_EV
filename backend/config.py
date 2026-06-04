@@ -1,4 +1,9 @@
 import os
+from dotenv import load_dotenv
+
+# Load env variables from root directory .env or current directory .env
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
+load_dotenv()
 
 class Config:
     # Database connection
@@ -7,3 +12,4 @@ class Config:
         'postgresql://postgres:pemalang123@localhost:5432/spk_mobil_listrik'
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+

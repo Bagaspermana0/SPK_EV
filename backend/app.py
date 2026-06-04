@@ -11,11 +11,8 @@ def create_app():
     app = Flask(__name__)
     
     # Config
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-        'DATABASE_URL',
-        'postgresql://postgres:pemalang123@localhost:5432/spk_mobil_listrik'
-    )
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config.from_object(Config)
+
     
     # Init DB
     db.init_app(app)

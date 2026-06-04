@@ -7,13 +7,15 @@ import { Zap, BarChart2, List } from 'lucide-react';
 
 function App() {
   const [weights, setWeights] = useState(null);
+  const [cr, setCr] = useState(null);
   const [ranking, setRanking] = useState(null);
   const [totalVehicles, setTotalVehicles] = useState(0);
   const [loadingSAW, setLoadingSAW] = useState(false);
   const [activeTab, setActiveTab] = useState('ahp');
 
-  const handleWeightsCalculated = (w) => {
+  const handleWeightsCalculated = (w, calculatedCr) => {
     setWeights(w);
+    setCr(calculatedCr);
     setRanking(null);
     setActiveTab('ahp');
   };
@@ -124,7 +126,7 @@ function App() {
               <AHPForm onWeightsCalculated={handleWeightsCalculated} />
             )}
             {activeTab === 'results' && (
-              <RankingTable ranking={ranking} totalVehicles={totalVehicles} />
+              <RankingTable ranking={ranking} totalVehicles={totalVehicles} weights={weights} cr={cr} />
             )}
             {activeTab === 'charts' && ranking && (
               <Charts ranking={ranking} weights={weights} />
