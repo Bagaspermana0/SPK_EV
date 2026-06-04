@@ -6,6 +6,8 @@ import RankingTable from './components/RankingTable';
 import Charts from './components/Charts';
 import { Zap, BarChart2, List, Lock, CircleDollarSign, Battery, Cpu } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 function App() {
   const [lang, setLang] = useState(() => {
     return localStorage.getItem('evfinder_lang') || 'id';
@@ -22,7 +24,7 @@ function App() {
   useEffect(() => {
     const fetchVehiclesCount = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/vehicles');
+        const response = await axios.get(`${API_BASE_URL}/api/vehicles`);
         if (response.data && Array.isArray(response.data)) {
           setTotalVehicles(response.data.length);
         }
@@ -49,7 +51,7 @@ function App() {
     if (!weights) return;
     setLoadingSAW(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/saw/rank', { weights });
+      const response = await axios.post(`${API_BASE_URL}/api/saw/rank`, { weights });
       if (response.data.success) {
         setRanking(response.data.top_10);
         setTotalVehicles(response.data.total_vehicles);
@@ -58,8 +60,8 @@ function App() {
     } catch (err) {
       console.error(err);
       alert(lang === 'id'
-        ? 'Koneksi ke backend Flask terputus. Pastikan Flask berjalan di port 5000.'
-        : 'Flask backend unreachable. Verify Flask is running on port 5000.');
+        ? `Koneksi ke backend Flask terputus. Pastikan Flask berjalan di ${API_BASE_URL}`
+        : `Flask backend unreachable. Verify Flask is running on ${API_BASE_URL}`);
     } finally {
       setLoadingSAW(false);
     }
