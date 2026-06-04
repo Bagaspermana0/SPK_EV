@@ -188,9 +188,9 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
         {showGuide && (
           <div style={{ marginTop: 12, fontSize: '0.82rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
             <ul style={{ listStyle: 'none', paddingLeft: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <li>👈 <strong>{t.ahpGuideLeft}</strong></li>
-              <li>⚪ <strong>{t.ahpGuideCenter}</strong></li>
-              <li>👉 <strong>{t.ahpGuideRight}</strong></li>
+              <li><strong>{t.ahpGuideLeft}</strong></li>
+              <li><strong>{t.ahpGuideCenter}</strong></li>
+              <li><strong>{t.ahpGuideRight}</strong></li>
             </ul>
             <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px dashed rgba(59, 130, 246, 0.15)', color: 'var(--text-muted)' }}>
               {t.ahpGuideExample}
@@ -231,7 +231,7 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
 
       {/* LIVE LOGIC / CONSISTENCY METER */}
       <div 
-        className="glass-card" 
+        className="glass-card sticky-consistency-meter" 
         style={{ 
           padding: '16px 20px', 
           marginBottom: 28, 
@@ -319,24 +319,40 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
 
                 {/* Range Input element */}
                 <div className="slider-wrap">
-                  <input
-                    type="range"
-                    className={`ahp-slider ${getSliderClass(pos)}`}
-                    min="1" max="17" step="1"
-                    value={pos}
-                    onChange={(e) => handleSliderChange(idx, e.target.value)}
-                    style={{
-                      background: `linear-gradient(90deg, 
-                        var(--green) 0%, 
-                        var(--glass-border) ${((pos - 1) / 16 * 100)}%, 
-                        var(--glass-border) ${((pos - 1) / 16 * 100)}%, 
-                        var(--blue) 100%)`
-                    }}
-                  />
+                  <div className="slider-controls-row">
+                    <button 
+                      type="button" 
+                      className="slider-step-btn" 
+                      onClick={() => handleSliderChange(idx, Math.max(1, pos - 1))}
+                    >
+                      &larr;
+                    </button>
+                    <input
+                      type="range"
+                      className={`ahp-slider ${getSliderClass(pos)}`}
+                      min="1" max="17" step="1"
+                      value={pos}
+                      onChange={(e) => handleSliderChange(idx, e.target.value)}
+                      style={{
+                        background: `linear-gradient(90deg, 
+                          var(--green) 0%, 
+                          var(--glass-border) ${((pos - 1) / 16 * 100)}%, 
+                          var(--glass-border) ${((pos - 1) / 16 * 100)}%, 
+                          var(--blue) 100%)`
+                      }}
+                    />
+                    <button 
+                      type="button" 
+                      className="slider-step-btn" 
+                      onClick={() => handleSliderChange(idx, Math.min(17, pos + 1))}
+                    >
+                      &rarr;
+                    </button>
+                  </div>
                   <div className="slider-value-display">
-                    <span>← {t[CRITERIA[i].labelKey]}</span>
+                    <span>{t[CRITERIA[i].labelKey]}</span>
                     <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>Sama / Equal</span>
-                    <span style={{ textAlign: 'right' }}>{t[CRITERIA[j].labelKey]} →</span>
+                    <span style={{ textAlign: 'right' }}>{t[CRITERIA[j].labelKey]}</span>
                   </div>
                 </div>
               </div>

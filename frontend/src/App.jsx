@@ -124,6 +124,35 @@ function App() {
             <div className="hero-stat-label">{t.heroStat3}</div>
           </div>
         </div>
+
+        {/* INFINITE LOOPING MARQUEE TICKER */}
+        <div className="hero-ticker">
+          <div className="ticker-track">
+            <span>{t.price}</span>
+            <span>•</span>
+            <span>{t.range}</span>
+            <span>•</span>
+            <span>{t.topSpeed}</span>
+            <span>•</span>
+            <span>{t.battery}</span>
+            <span>•</span>
+            <span>AHP Model</span>
+            <span>•</span>
+            <span>SAW Rank</span>
+            <span>•</span>
+            <span>{t.price}</span>
+            <span>•</span>
+            <span>{t.range}</span>
+            <span>•</span>
+            <span>{t.topSpeed}</span>
+            <span>•</span>
+            <span>{t.battery}</span>
+            <span>•</span>
+            <span>AHP Model</span>
+            <span>•</span>
+            <span>SAW Rank</span>
+          </div>
+        </div>
       </div>
 
       {/* ── MAIN ── */}

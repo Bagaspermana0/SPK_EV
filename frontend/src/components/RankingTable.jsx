@@ -61,6 +61,58 @@ const getBrandSearchTerm = (name) => {
   return 'electric vehicle car modern';
 };
 
+const getCarImageUrl = (name) => {
+  const n = name.toLowerCase();
+  
+  // Direct, static, high-quality photo URLs from Unsplash CDN
+  if (n.includes('tesla')) {
+    return 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('porsche')) {
+    return 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('bmw')) {
+    return 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('audi')) {
+    return 'https://images.unsplash.com/photo-1606595885341-b44c3ad9f63d?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('mercedes') || n.includes('eqe') || n.includes('eqs')) {
+    return 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('volkswagen') || n.includes('vw') || n.includes('id.')) {
+    return 'https://images.unsplash.com/photo-1622200294247-926f4a3930ae?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('hyundai') || n.includes('ioniq')) {
+    return 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('kia') || n.includes('ev6') || n.includes('ev9')) {
+    return 'https://images.unsplash.com/photo-1655857202790-b5bfd620573e?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('ford') || n.includes('mustang')) {
+    return 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('polestar')) {
+    return 'https://images.unsplash.com/photo-1620803504825-f7eb80ccab8f?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('nissan') || n.includes('leaf') || n.includes('ariya')) {
+    return 'https://images.unsplash.com/photo-1562620658-9477aa2f89f7?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('byd')) {
+    return 'https://images.unsplash.com/photo-1707036733221-a44b918074d0?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('nio')) {
+    return 'https://images.unsplash.com/photo-1698299105436-1e6fbfa4c585?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('lucid')) {
+    return 'https://images.unsplash.com/photo-1669070092775-3b95a8bfb4eb?auto=format&fit=crop&w=400&q=80';
+  }
+  if (n.includes('rivian')) {
+    return 'https://images.unsplash.com/photo-1669070091877-628b030491fb?auto=format&fit=crop&w=400&q=80';
+  }
+  return 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=400&q=80';
+};
+
 // ─── Rank badge styles ────────────────────────────────────────────────────────
 const getRankClass = (rank) => {
   if (rank === 1) return 'rank-1-badge';
@@ -221,8 +273,7 @@ const CarModal = ({ car, totalVehicles, lang, t, onClose }) => {
   const monogram = getBrandInitial(car.name);
   const score = (car.score * 100).toFixed(2);
 
-  const brandTerm = encodeURIComponent(getBrandSearchTerm(car.name));
-  const imgUrl = `https://images.unsplash.com/featured/800x450/?${brandTerm}&sig=${Math.abs(hashCode(car.name))}`;
+  const imgUrl = getCarImageUrl(car.name);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -351,8 +402,7 @@ const CarCard = ({ car, lang, t, onClick }) => {
   const monogram = getBrandInitial(car.name);
   const score = (car.score * 100).toFixed(1);
 
-  const brandTerm = encodeURIComponent(getBrandSearchTerm(car.name));
-  const imgUrl = `https://images.unsplash.com/featured/400x225/?${brandTerm}&sig=${Math.abs(hashCode(car.name))}`;
+  const imgUrl = getCarImageUrl(car.name);
 
   return (
     <div className="car-card glass-card" onClick={() => onClick(car)} title={t.sawClickDetail}>
