@@ -1,10 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import axios from 'axios';
 import confetti from 'canvas-confetti';
 import { 
   CheckCircle, 
   AlertTriangle, 
-  RefreshCw, 
   HelpCircle, 
   ChevronDown, 
   ChevronUp, 
@@ -21,13 +19,55 @@ const sliderToAHP = (pos) => {
   return pos - 8;
 };
 
+const computeAHP = (matrix) => {
+  const n = 4;
+  const colSums = [0, 0, 0, 0];
+  for (let j = 0; j < n; j++) {
+    for (let i = 0; i < n; i++) {
+      colSums[j] += matrix[i][j];
+    }
+  }
+
+  const weights = [0, 0, 0, 0];
+  for (let i = 0; i < n; i++) {
+    let rowSum = 0;
+    for (let j = 0; j < n; j++) {
+      rowSum += matrix[i][j] / colSums[j];
+    }
+    weights[i] = rowSum / n;
+  }
+
+  const Aw = [0, 0, 0, 0];
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      Aw[i] += matrix[i][j] * weights[j];
+    }
+  }
+
+  let lambdaMaxSum = 0;
+  for (let i = 0; i < n; i++) {
+    lambdaMaxSum += Aw[i] / weights[i];
+  }
+  const lambdaMax = lambdaMaxSum / n;
+
+  const ci = (lambdaMax - n) / (n - 1);
+  const ri = 0.9; // For n=4
+  const cr = ci / ri;
+
+  return {
+    weights: {
+      price: weights[0],
+      range: weights[1],
+      top_speed: weights[2],
+      battery: weights[3],
+    },
+    cr: cr,
+    isConsistent: cr <= 0.10,
+  };
+};
+
 const AHPForm = ({ onWeightsCalculated, lang, t }) => {
   const [sliders, setSliders] = useState([9, 9, 9, 9, 9, 9]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [cr, setCr] = useState(null);
-  const [isConsistent, setIsConsistent] = useState(null);
-  const [weights, setWeights] = useState(null);
   const [activePreset, setActivePreset] = useState('equal');
   const [showGuide, setShowGuide] = useState(true);
 
@@ -67,13 +107,13 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
 
   const matrix = useMemo(() => buildMatrix(sliders), [sliders, PAIRS]);
 
+  const liveResult = useMemo(() => {
+    return computeAHP(matrix);
+  }, [matrix]);
+
   const applyPreset = (key) => {
     setSliders(PRESETS[key]);
     setActivePreset(key);
-    setError('');
-    setCr(null);
-    setIsConsistent(null);
-    setWeights(null);
   };
 
   const handleSliderChange = (idx, val) => {
@@ -81,10 +121,6 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
     next[idx] = parseInt(val);
     setSliders(next);
     setActivePreset(null);
-    setError('');
-    setCr(null);
-    setIsConsistent(null);
-    setWeights(null);
   };
 
   const getSliderClass = (pos) => {
@@ -111,39 +147,18 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
       : `${rightName} ${factor}× more important than ${leftName}`;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    setCr(null);
-    setIsConsistent(null);
-
-    try {
-      const response = await axios.post('http://localhost:5000/api/ahp/calculate', {
-        pairwise_matrix: matrix,
-      });
-      const data = response.data;
-      setCr(data.cr);
-      setIsConsistent(data.is_consistent);
-      setWeights(data.weights);
-
-      if (data.is_consistent) {
-        onWeightsCalculated(data.weights, data.cr);
-        confetti({ 
-          particleCount: 120, 
-          spread: 80, 
-          origin: { y: 0.55 }, 
-          colors: ['#00D97E', '#3B82F6', '#06B6D4'] 
-        });
-      } else {
-        // Inconsistent matrix error
-        setError('inconsistent');
-      }
-    } catch (err) {
-      setError('network');
-    } finally {
-      setLoading(false);
-    }
+    if (!liveResult || !liveResult.isConsistent) return;
+    
+    onWeightsCalculated(liveResult.weights, liveResult.cr);
+    
+    confetti({ 
+      particleCount: 120, 
+      spread: 80, 
+      origin: { y: 0.55 }, 
+      colors: ['#00D97E', '#3B82F6', '#06B6D4'] 
+    });
   };
 
   const presetDescriptions = {
@@ -214,6 +229,58 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
         )}
       </div>
 
+      {/* LIVE LOGIC / CONSISTENCY METER */}
+      <div 
+        className="glass-card" 
+        style={{ 
+          padding: '16px 20px', 
+          marginBottom: 28, 
+          borderLeft: `4px solid ${liveResult.isConsistent ? 'var(--green)' : 'var(--red)'}`,
+          background: liveResult.isConsistent ? 'rgba(0, 217, 126, 0.02)' : 'rgba(239, 68, 68, 0.02)',
+          transition: 'all 0.3s ease'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: '8px' }}>
+          <span style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: liveResult.isConsistent ? 'var(--green)' : 'var(--red)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            {liveResult.isConsistent ? (
+              <><CheckCircle size={14} /> {lang === 'id' ? 'Logika Pilihan: Konsisten (Logis)' : 'Logic Status: Consistent'}</>
+            ) : (
+              <><AlertTriangle size={14} /> {lang === 'id' ? 'Logika Pilihan: Ada Kontradiksi' : 'Logic Status: Inconsistent'}</>
+            )}
+          </span>
+          <span style={{ fontSize: '0.72rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+            {lang === 'id' ? 'Tingkat Kontradiksi' : 'Contradiction Level'}: <strong style={{ color: liveResult.isConsistent ? 'var(--green)' : 'var(--red)' }}>{(liveResult.cr * 100).toFixed(1)}%</strong> ({lang === 'id' ? 'Batas' : 'Limit'}: 10.0%)
+          </span>
+        </div>
+        <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+          {liveResult.isConsistent 
+            ? (lang === 'id' 
+                ? 'Pilihan Anda logis dan selaras secara matematis. Anda dapat melihat hasil rekomendasi.' 
+                : 'Your choices are mathematically consistent. You are ready to see recommendations.')
+            : (lang === 'id' 
+                ? 'Terdapat kontradiksi (misal: A > B, B > C, tapi C > A). Kurangi slider yang terlalu mentok kiri/kanan agar pilihan lebih logis.' 
+                : 'Your options contradict. Try reducing extreme slider values to make them logically aligned.')
+          }
+        </p>
+
+        {/* Real-time Weights Preview in Consistency Meter */}
+        {liveResult.isConsistent && (
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px dashed rgba(255,255,255,0.06)' }}>
+            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 6 }}>
+              {lang === 'id' ? 'Preview Distribusi Bobot Kriteria:' : 'Weight Distribution Preview:'}
+            </div>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              {CRITERIA.map(c => (
+                <span key={c.key} style={{ fontSize: '0.76rem', color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ color: c.color }}>{c.icon}</span>
+                  {t[c.labelKey]}: <strong className="numeric">{(liveResult.weights[c.key] * 100).toFixed(1)}%</strong>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* FORM OF PAIRWISE COMPARISONS */}
       <form onSubmit={handleSubmit}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: 28 }}>
@@ -279,12 +346,16 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
 
         {/* CONTROLS */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <button type="submit" className="btn btn-green" disabled={loading}>
-            {loading ? (
-              <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> {t.ahpCalculating}</>
-            ) : (
-              <><CheckCircle size={14} /> {t.ahpSubmit}</>
-            )}
+          <button 
+            type="submit" 
+            className={`btn ${liveResult.isConsistent ? 'btn-green' : 'btn-outline'}`}
+            disabled={!liveResult.isConsistent}
+            style={{ 
+              opacity: liveResult.isConsistent ? 1 : 0.4,
+              cursor: liveResult.isConsistent ? 'pointer' : 'not-allowed'
+            }}
+          >
+            <CheckCircle size={14} /> {t.ahpSubmit}
           </button>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
             <Info size={12} />
@@ -292,73 +363,6 @@ const AHPForm = ({ onWeightsCalculated, lang, t }) => {
           </div>
         </div>
       </form>
-
-      {/* ERROR PANELS */}
-      {error === 'network' && (
-        <div className="alert alert-error">
-          <AlertTriangle size={16} style={{ flexShrink: 0, color: 'var(--red)' }} />
-          <span>
-            {lang === 'id' 
-              ? 'Koneksi ke backend Flask terputus. Pastikan server Flask berjalan di port 5000.' 
-              : 'Flask backend unreachable. Verify Flask server is active on port 5000.'}
-          </span>
-        </div>
-      )}
-
-      {error === 'inconsistent' && cr !== null && (
-        <div className="glass-card glass-card-red alert" style={{ borderLeft: '3px solid var(--red)', marginTop: 24, display: 'block' }}>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
-            <AlertTriangle size={16} style={{ color: 'var(--red)', flexShrink: 0 }} />
-            <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {t.ahpErrorTitle} (CR = {cr.toFixed(3)})
-            </strong>
-          </div>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 16 }}>{t.ahpErrorTip}</p>
-          
-          {/* Quick template triggers in error box */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button 
-              type="button" 
-              className="preset-chip" 
-              onClick={() => applyPreset('equal')}
-              style={{ fontSize: '0.72rem', padding: '6px 12px' }}
-            >
-              🔄 {t.presetEqual}
-            </button>
-            <button 
-              type="button" 
-              className="preset-chip" 
-              onClick={() => applyPreset('balanced_ev')}
-              style={{ fontSize: '0.72rem', padding: '6px 12px' }}
-            >
-              🔄 {t.presetOptimal}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {cr !== null && isConsistent && weights && (
-        <div className="alert alert-success">
-          <CheckCircle size={16} style={{ flexShrink: 0, color: 'var(--green)' }} />
-          <div>
-            <div style={{ fontWeight: 700, fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-primary)', marginBottom: 6 }}>
-              {t.ahpSuccess} (CR = {cr.toFixed(3)})
-            </div>
-            <div style={{ display: 'flex', gap: '16px 24px', flexWrap: 'wrap', marginTop: 10 }}>
-              {CRITERIA.map(c => (
-                <span key={c.key} style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ color: c.color }}>{c.icon}</span>
-                  {t[c.labelKey]}: <strong className="numeric">{(weights[c.key] * 100).toFixed(1)}%</strong>
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 };

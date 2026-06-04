@@ -35,6 +35,32 @@ const getBrandInitial = (name) => {
   return firstWord.substring(0, 2).toUpperCase();
 };
 
+const getBrandSearchTerm = (name) => {
+  const n = name.toLowerCase();
+  if (n.includes('tesla')) return 'tesla electric car';
+  if (n.includes('byd')) return 'byd electric car china';
+  if (n.includes('nio')) return 'nio electric car';
+  if (n.includes('rivian')) return 'rivian electric truck';
+  if (n.includes('lucid')) return 'lucid air electric sedan';
+  if (n.includes('porsche')) return 'porsche taycan electric';
+  if (n.includes('audi')) return 'audi e-tron electric';
+  if (n.includes('bmw')) return 'bmw i4 electric car';
+  if (n.includes('mercedes') || n.includes('eqe') || n.includes('eqs')) return 'mercedes electric car';
+  if (n.includes('volkswagen') || n.includes('vw') || n.includes('id.')) return 'volkswagen id4 electric';
+  if (n.includes('hyundai') || n.includes('ioniq')) return 'hyundai ioniq electric';
+  if (n.includes('kia') || n.includes('ev6') || n.includes('ev9')) return 'kia ev6 electric';
+  if (n.includes('ford') || n.includes('mustang') || n.includes('f-150')) return 'ford mustang mach e electric';
+  if (n.includes('chevrolet') || n.includes('chevy') || n.includes('bolt')) return 'chevrolet bolt electric';
+  if (n.includes('polestar')) return 'polestar electric car';
+  if (n.includes('volvo')) return 'volvo electric car';
+  if (n.includes('renault')) return 'renault zoe electric';
+  if (n.includes('nissan') || n.includes('leaf') || n.includes('ariya')) return 'nissan ariya electric';
+  if (n.includes('xpeng') || n.includes('xiaopeng')) return 'xpeng electric car';
+  if (n.includes('li ') || n.includes('lixiang')) return 'li auto electric car china';
+  if (n.includes('geely') || n.includes('zeekr')) return 'zeekr electric car';
+  return 'electric vehicle car modern';
+};
+
 // ─── Rank badge styles ────────────────────────────────────────────────────────
 const getRankClass = (rank) => {
   if (rank === 1) return 'rank-1-badge';
@@ -190,9 +216,13 @@ const exportToPDF = (ranking, weights, cr, lang, t) => {
 // ─── Car Detail Modal ────────────────────────────────────────────────────────
 const CarModal = ({ car, totalVehicles, lang, t, onClose }) => {
   if (!car) return null;
+  const [imgError, setImgError] = useState(false);
   const gradient = getGradientBg(car.name);
   const monogram = getBrandInitial(car.name);
   const score = (car.score * 100).toFixed(2);
+
+  const brandTerm = encodeURIComponent(getBrandSearchTerm(car.name));
+  const imgUrl = `https://images.unsplash.com/featured/800x450/?${brandTerm}&sig=${Math.abs(hashCode(car.name))}`;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -204,14 +234,22 @@ const CarModal = ({ car, totalVehicles, lang, t, onClose }) => {
         </button>
 
         {/* Dynamic Abstract Gradient Hero */}
-        <div className="modal-header-img modal-header-gradient" style={{ background: gradient }}>
-          <div className="modal-header-overlay" />
+        <div className="modal-header-img modal-header-gradient" style={{ background: !imgError ? 'none' : gradient, position: 'relative', overflow: 'hidden' }}>
+          {!imgError && (
+            <img 
+              src={imgUrl} 
+              alt={car.name} 
+              onError={() => setImgError(true)} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, zIndex: 0 }}
+            />
+          )}
+          <div className="modal-header-overlay" style={{ zIndex: 1 }} />
           
           <div style={{ position: 'absolute', right: 28, bottom: -10, fontSize: '6.5rem', fontFamily: 'monospace', fontWeight: 900, color: 'rgba(255, 255, 255, 0.04)', userSelect: 'none', pointerEvents: 'none', zIndex: 1 }}>
             {monogram}
           </div>
 
-          <div className="modal-header-content">
+          <div className="modal-header-content" style={{ zIndex: 2 }}>
             <div className="modal-rank-row">
               <span className={`modal-rank-label ${getRankClass(car.rank)}`}>
                 {getRankLabel(car.rank, lang)}
@@ -308,20 +346,33 @@ const CarModal = ({ car, totalVehicles, lang, t, onClose }) => {
 
 // ─── Car Card ────────────────────────────────────────────────────────────────
 const CarCard = ({ car, lang, t, onClick }) => {
+  const [imgError, setImgError] = useState(false);
   const gradient = getGradientBg(car.name);
   const monogram = getBrandInitial(car.name);
   const score = (car.score * 100).toFixed(1);
 
+  const brandTerm = encodeURIComponent(getBrandSearchTerm(car.name));
+  const imgUrl = `https://images.unsplash.com/featured/400x225/?${brandTerm}&sig=${Math.abs(hashCode(car.name))}`;
+
   return (
     <div className="car-card glass-card" onClick={() => onClick(car)} title={t.sawClickDetail}>
-      {/* Monogram Gradient Box */}
+      {/* Photo with gradient overlay */}
       <div className="car-card-image-wrap">
-        <div className="car-card-gradient-bg" style={{ background: gradient }}>
-          <div style={{ fontSize: '4.8rem', fontFamily: 'monospace', fontWeight: 900, color: 'rgba(255, 255, 255, 0.035)', userSelect: 'none', pointerEvents: 'none' }}>
-            {monogram}
+        {!imgError ? (
+          <img 
+            src={imgUrl} 
+            alt={car.name} 
+            onError={() => setImgError(true)} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', border: 'none' }}
+          />
+        ) : (
+          <div className="car-card-gradient-bg" style={{ background: gradient }}>
+            <div style={{ fontSize: '4.8rem', fontFamily: 'monospace', fontWeight: 900, color: 'rgba(255, 255, 255, 0.035)', userSelect: 'none', pointerEvents: 'none' }}>
+              {monogram}
+            </div>
           </div>
-          <div className="car-card-gradient-overlay" />
-        </div>
+        )}
+        <div className="car-card-gradient-overlay" />
 
         {/* Rank Badge */}
         <div className={`car-rank-badge ${getRankClass(car.rank)}`}>
