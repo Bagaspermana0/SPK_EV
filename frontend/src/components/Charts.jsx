@@ -25,12 +25,12 @@ const COLORS = {
   gold:   '#F59E0B',
   silver: '#94A3B8',
   bronze: '#CD7C2B',
-  green:  '#00C46A',
-  blue:   '#0066FF',
-  teal:   '#00C8D4',
+  green:  '#00D97E',
+  blue:   '#3B82F6',
+  teal:   '#06B6D4',
 };
 
-const Charts = ({ ranking, weights }) => {
+const Charts = ({ ranking, weights, lang, t }) => {
   if (!ranking || ranking.length === 0 || !weights) return null;
 
   const top10 = ranking.slice(0, 10);
@@ -42,7 +42,7 @@ const Charts = ({ ranking, weights }) => {
       return parts.length > 2 ? parts.slice(0, 2).join(' ') + '…' : c.name;
     }),
     datasets: [{
-      label: 'Skor SAW (%)',
+      label: t.chartTitle1,
       data: top10.map(c => parseFloat((c.score * 100).toFixed(2))),
       backgroundColor: top10.map((_, i) =>
         i === 0 ? COLORS.gold :
@@ -61,9 +61,11 @@ const Charts = ({ ranking, weights }) => {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#0A1628',
+        backgroundColor: '#0B1628',
         titleColor: '#fff',
         bodyColor: 'rgba(255,255,255,0.7)',
+        titleFont: { family: 'Arial', size: 11, weight: 'bold' },
+        bodyFont: { family: 'monospace', size: 11 },
         callbacks: { label: (ctx) => ` ${ctx.parsed.y.toFixed(2)}%` }
       }
     },
@@ -71,41 +73,72 @@ const Charts = ({ ranking, weights }) => {
       x: {
         grid: { display: false },
         ticks: {
-          color: '#6B7FA3',
-          font: { family: 'Barlow Condensed, sans-serif', size: 10, weight: '700' },
+          color: '#94A3B8',
+          font: { family: 'Arial', size: 9, weight: 'bold' },
           maxRotation: 30,
         },
-        border: { color: '#DDE3ED' }
+        border: { color: 'rgba(255, 255, 255, 0.08)' }
       },
       y: {
-        grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
+        grid: { color: 'rgba(255, 255, 255, 0.03)', drawBorder: false },
         ticks: {
-          color: '#6B7FA3',
-          font: { family: 'Barlow Condensed, sans-serif', size: 10, weight: '700' },
+          color: '#94A3B8',
+          font: { family: 'monospace', size: 9 },
           callback: (v) => `${v}%`
         },
-        border: { display: false }
+        border: { display: false },
+        // Y-axis max removed for dynamic auto-scaling
       }
+    }
+  };
+
+  // ── Horizontal Average line plugin ──
+  const averageLinePlugin = {
+    id: 'averageLine',
+    afterDraw: (chart) => {
+      const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+      const dataset = chart.data.datasets[0];
+      if (!dataset) return;
+      const data = dataset.data;
+      const avg = data.reduce((sum, val) => sum + val, 0) / data.length;
+      
+      const yPos = y.getPixelForValue(avg);
+      
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(0, 219, 126, 0.25)'; // Light glow green dashed line
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.moveTo(left, yPos);
+      ctx.lineTo(right, yPos);
+      ctx.stroke();
+      ctx.closePath();
+      
+      // Dynamic translated label
+      ctx.fillStyle = '#00D97E';
+      ctx.font = "bold 9px monospace";
+      ctx.fillText(`${t.chartAvgLine}: ${avg.toFixed(2)}%`, left + 8, yPos - 6);
+      ctx.restore();
     }
   };
 
   // ── Radar Chart ──
   const radarData = {
-    labels: ['Harga', 'Range', 'Top Speed', 'Baterai'],
+    labels: [t.price, t.range, t.topSpeed, t.battery],
     datasets: [{
-      label: 'Bobot Prioritas',
+      label: t.chartPriority,
       data: [
         weights.price * 100,
         weights.range * 100,
         weights.top_speed * 100,
         weights.battery * 100,
       ],
-      backgroundColor: 'rgba(0, 196, 106, 0.15)',
+      backgroundColor: 'rgba(0, 217, 126, 0.08)',
       borderColor: COLORS.green,
       pointBackgroundColor: COLORS.green,
       pointBorderColor: '#fff',
-      pointRadius: 5,
-      borderWidth: 2.5,
+      pointRadius: 4,
+      borderWidth: 1.5,
       fill: true,
     }]
   };
@@ -116,22 +149,24 @@ const Charts = ({ ranking, weights }) => {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#0A1628',
+        backgroundColor: '#0B1628',
+        titleFont: { family: 'Arial', size: 11, weight: 'bold' },
+        bodyFont: { family: 'monospace', size: 11 },
         callbacks: { label: (ctx) => ` ${ctx.parsed.r.toFixed(1)}%` }
       }
     },
     scales: {
       r: {
-        angleLines: { color: 'rgba(0,0,0,0.1)' },
-        grid: { color: 'rgba(0,0,0,0.08)' },
+        angleLines: { color: 'rgba(255, 255, 255, 0.05)' },
+        grid: { color: 'rgba(255, 255, 255, 0.05)' },
         pointLabels: {
-          color: '#3D5278',
-          font: { family: 'Barlow Condensed, sans-serif', size: 12, weight: '700' }
+          color: '#94A3B8',
+          font: { family: 'Arial', size: 10, weight: 'bold' }
         },
         ticks: {
           backdropColor: 'transparent',
-          color: '#6B7FA3',
-          font: { family: 'Barlow Condensed, sans-serif', size: 9 },
+          color: '#475569',
+          font: { family: 'monospace', size: 8 },
           callback: (v) => `${v}%`
         },
         min: 0,
@@ -141,28 +176,28 @@ const Charts = ({ ranking, weights }) => {
   };
 
   return (
-    <div className="anim-fade">
+    <div className="tab-content anim-fade-up-1">
       <div className="section-label" style={{ marginBottom: 6 }}>Langkah 3 — Analisis</div>
       <h2 style={{ marginBottom: 20 }}>Visualisasi Data</h2>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
+      <div className="chart-card-wrapper">
 
         {/* Bar Chart */}
-        <div className="card card-accent-green" style={{ height: 360, display: 'flex', flexDirection: 'column', padding: '20px 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <BarChart3 size={16} style={{ color: 'var(--green)' }} />
-            <h3 style={{ fontSize: '0.85rem', marginBottom: 0 }}>Komparasi Skor Top 10</h3>
+        <div className="glass-card glass-card-green cut-top-right" style={{ height: 350, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <BarChart3 size={15} style={{ color: 'var(--green)' }} />
+            <h3 style={{ fontSize: '0.85rem', marginBottom: 0 }}>{t.chartTitle1}</h3>
           </div>
           <div style={{ flex: 1, position: 'relative' }}>
-            <Bar data={barData} options={barOptions} />
+            <Bar data={barData} options={barOptions} plugins={[averageLinePlugin]} />
           </div>
         </div>
 
         {/* Radar Chart */}
-        <div className="card card-accent-blue" style={{ height: 360, display: 'flex', flexDirection: 'column', padding: '20px 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <Target size={16} style={{ color: 'var(--blue)' }} />
-            <h3 style={{ fontSize: '0.85rem', marginBottom: 0 }}>Distribusi Bobot Kriteria</h3>
+        <div className="glass-card glass-card-blue cut-top-right" style={{ height: 350, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <Target size={15} style={{ color: 'var(--blue)' }} />
+            <h3 style={{ fontSize: '0.85rem', marginBottom: 0 }}>{t.chartTitle2}</h3>
           </div>
           <div style={{ flex: 1, position: 'relative' }}>
             <Radar data={radarData} options={radarOptions} />

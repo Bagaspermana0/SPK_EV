@@ -1,89 +1,71 @@
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import confetti from 'canvas-confetti';
-import { CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { 
+  CheckCircle, 
+  AlertTriangle, 
+  RefreshCw, 
+  HelpCircle, 
+  ChevronDown, 
+  ChevronUp, 
+  CircleDollarSign, 
+  Battery, 
+  Zap, 
+  Cpu,
+  Info
+} from 'lucide-react';
 
-// Criteria definitions
-const CRITERIA = [
-  { key: 'price',     label: 'Harga',     icon: '💰', desc: 'Semakin murah semakin baik' },
-  { key: 'range',     label: 'Range',     icon: '🔋', desc: 'Jarak tempuh (km)' },
-  { key: 'top_speed', label: 'Top Speed', icon: '⚡', desc: 'Kecepatan puncak (km/h)' },
-  { key: 'battery',   label: 'Baterai',   icon: '📦', desc: 'Kapasitas baterai (kWh)' },
-];
-
-// 6 pairwise comparisons (upper triangle of 4x4 matrix)
-const PAIRS = [
-  [0, 1], [0, 2], [0, 3],
-  [1, 2], [1, 3],
-  [2, 3],
-];
-
-// Slider maps position 1–17 → AHP scale
-// position 9 = equal (1), 1..8 = 1/9..1/2, 10..17 = 2..9
 const sliderToAHP = (pos) => {
   if (pos === 9) return 1;
-  if (pos < 9) return 1 / (10 - pos);  // pos=8→1/2, pos=1→1/9
-  return pos - 8;                        // pos=10→2, pos=17→9
+  if (pos < 9) return 1 / (10 - pos);
+  return pos - 8;
 };
 
-const ahpLabel = (pos) => {
-  if (pos === 9) return 'Sama Penting';
-  
-  const labels = {
-    1: 'Mutlak Kurang',
-    2: 'Sangat Jauh Kurang',
-    3: 'Jauh Kurang',
-    4: 'Lebih Kurang',
-    5: 'Sangat Kurang',
-    6: 'Cukup Kurang',
-    7: 'Kurang Penting',
-    8: 'Sedikit Kurang',
-    10: 'Sedikit Lebih',
-    11: 'Cukup Lebih',
-    12: 'Lebih Penting',
-    13: 'Sangat Lebih',
-    14: 'Lebih Utama',
-    15: 'Jauh Lebih',
-    16: 'Sangat Jauh Lebih',
-    17: 'Mutlak Lebih'
-  };
-
-  const factor = pos < 9 ? (10 - pos) : (pos - 8);
-  const suffix = pos < 9 ? `1/${factor}×` : `${factor}×`;
-  
-  return labels[pos] ? `${labels[pos]} (${suffix})` : `${suffix}`;
-};
-
-const buildMatrix = (sliders) => {
-  const n = CRITERIA.length;
-  const m = Array.from({ length: n }, () => Array(n).fill(1));
-  PAIRS.forEach(([i, j], idx) => {
-    const v = sliderToAHP(sliders[idx]);
-    m[i][j] = v;
-    m[j][i] = parseFloat((1 / v).toFixed(6));
-  });
-  return m;
-};
-
-// Preset slider positions
-const PRESETS = {
-  equal:         [9, 9, 9, 9, 9, 9],
-  price_first:   [13, 13, 12, 9, 9, 9],   // price >> range >> speed ≈ battery
-  range_first:   [6,  9,  9, 12, 12, 9],  // range >> price, range >> speed, range >> battery
-  speed_first:   [9,  6,  9, 6, 9, 12],
-  balanced_ev:   [11, 10, 10, 9, 9, 9],   // price slightly more than rest
-};
-
-const AHPForm = ({ onWeightsCalculated }) => {
-  const [sliders, setSliders] = useState(PRESETS.equal);
+const AHPForm = ({ onWeightsCalculated, lang, t }) => {
+  const [sliders, setSliders] = useState([9, 9, 9, 9, 9, 9]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cr, setCr] = useState(null);
   const [isConsistent, setIsConsistent] = useState(null);
   const [weights, setWeights] = useState(null);
   const [activePreset, setActivePreset] = useState('equal');
+  const [showGuide, setShowGuide] = useState(true);
 
-  const matrix = useMemo(() => buildMatrix(sliders), [sliders]);
+  // Criteria metadata mapping to translation keys and icons
+  const CRITERIA = useMemo(() => [
+    { key: 'price',     labelKey: 'price',     icon: <CircleDollarSign size={14} />, color: 'var(--amber)' },
+    { key: 'range',     labelKey: 'range',     icon: <Battery size={14} />, color: 'var(--green)' },
+    { key: 'top_speed', labelKey: 'topSpeed',  icon: <Zap size={14} />, color: 'var(--blue)' },
+    { key: 'battery',   labelKey: 'battery',   icon: <Cpu size={14} />, color: 'var(--teal)' },
+  ], []);
+
+  // 6 upper-triangular pairwise comparisons
+  const PAIRS = useMemo(() => [
+    [0, 1], [0, 2], [0, 3],
+    [1, 2], [1, 3],
+    [2, 3],
+  ], []);
+
+  const PRESETS = useMemo(() => ({
+    equal:         [9, 9, 9, 9, 9, 9],
+    price_first:   [13, 13, 12, 9, 9, 9],
+    range_first:   [6,  9,  9, 12, 12, 9],
+    speed_first:   [9,  6,  9, 6, 9, 12],
+    balanced_ev:   [11, 10, 10, 9, 9, 9],
+  }), []);
+
+  const buildMatrix = (currentSliders) => {
+    const n = 4;
+    const m = Array.from({ length: n }, () => Array(n).fill(1));
+    PAIRS.forEach(([i, j], idx) => {
+      const v = sliderToAHP(currentSliders[idx]);
+      m[i][j] = v;
+      m[j][i] = parseFloat((1 / v).toFixed(6));
+    });
+    return m;
+  };
+
+  const matrix = useMemo(() => buildMatrix(sliders), [sliders, PAIRS]);
 
   const applyPreset = (key) => {
     setSliders(PRESETS[key]);
@@ -105,6 +87,30 @@ const AHPForm = ({ onWeightsCalculated }) => {
     setWeights(null);
   };
 
+  const getSliderClass = (pos) => {
+    if (pos === 9) return 'ahp-slider-center';
+    return pos < 9 ? 'ahp-slider-left' : 'ahp-slider-right';
+  };
+
+  const getComparisonText = (i, j, pos) => {
+    const leftName = t[CRITERIA[i].labelKey];
+    const rightName = t[CRITERIA[j].labelKey];
+    
+    if (pos === 9) {
+      return lang === 'id' ? 'Kedua kriteria sama penting' : 'Both criteria are equally important';
+    }
+    if (pos < 9) {
+      const factor = 10 - pos;
+      return lang === 'id'
+        ? `${leftName} ${factor}× lebih penting dari ${rightName}`
+        : `${leftName} ${factor}× more important than ${rightName}`;
+    }
+    const factor = pos - 8;
+    return lang === 'id'
+      ? `${rightName} ${factor}× lebih penting dari ${leftName}`
+      : `${rightName} ${factor}× more important than ${leftName}`;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -123,100 +129,147 @@ const AHPForm = ({ onWeightsCalculated }) => {
 
       if (data.is_consistent) {
         onWeightsCalculated(data.weights, data.cr);
-        confetti({ particleCount: 120, spread: 80, origin: { y: 0.55 }, colors: ['#00C46A', '#0066FF', '#00C8D4'] });
+        confetti({ 
+          particleCount: 120, 
+          spread: 80, 
+          origin: { y: 0.55 }, 
+          colors: ['#00D97E', '#3B82F6', '#06B6D4'] 
+        });
       } else {
-        setError(`Matriks tidak konsisten (CR = ${data.cr?.toFixed(4)}). Coba sesuaikan kembali perbandingan.`);
+        // Inconsistent matrix error
+        setError('inconsistent');
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Koneksi ke backend Flask terputus.');
+      setError('network');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="anim-fade">
-      <div className="section-label" style={{ marginBottom: 6 }}>Langkah 1</div>
-      <h2 style={{ marginBottom: 4 }}>Atur Prioritas Kriteria</h2>
-      <p style={{ marginBottom: 24, maxWidth: 600 }}>
-        Geser slider untuk menentukan seberapa penting satu kriteria dibanding yang lain.
-        Tengah = sama penting, geser kanan = kriteria kiri lebih penting.
-      </p>
+  const presetDescriptions = {
+    equal: t.presetEqualDesc,
+    price_first: t.presetPriceDesc,
+    range_first: t.presetRangeDesc,
+    speed_first: t.presetSpeedDesc,
+    balanced_ev: t.presetOptimalDesc,
+  };
 
-      {/* PRESETS */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 28 }}>
-        <span style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', alignSelf: 'center' }}>Template:</span>
-        {[
-          { key: 'equal',       label: 'Seimbang' },
-          { key: 'price_first', label: '💰 Prioritas Harga' },
-          { key: 'range_first', label: '🔋 Prioritas Range' },
-          { key: 'speed_first', label: '⚡ Prioritas Speed' },
-          { key: 'balanced_ev', label: '🌿 EV Optimal' },
-        ].map(p => (
-          <button
-            key={p.key}
-            className={`preset-chip ${activePreset === p.key ? 'active' : ''}`}
-            type="button"
-            onClick={() => applyPreset(p.key)}
-          >
-            {p.label}
-          </button>
-        ))}
+  return (
+    <div className="tab-content">
+      <div className="section-label" style={{ marginBottom: 6 }}>Langkah 1</div>
+      <h2 style={{ marginBottom: 8 }}>{t.ahpTitle}</h2>
+      <p style={{ marginBottom: 24, maxWidth: 640 }}>{t.ahpDesc}</p>
+
+      {/* COLLAPSIBLE GUIDE PANEL */}
+      <div className="glass-card guide-panel" style={{ padding: '16px 20px', marginBottom: 24 }}>
+        <div className="guide-header" onClick={() => setShowGuide(!showGuide)}>
+          <span className="guide-title">
+            <HelpCircle size={15} />
+            {t.ahpGuideTitle}
+          </span>
+          {showGuide ? <ChevronUp size={15} style={{ color: 'var(--blue)' }} /> : <ChevronDown size={15} style={{ color: 'var(--blue)' }} />}
+        </div>
+        
+        {showGuide && (
+          <div style={{ marginTop: 12, fontSize: '0.82rem', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
+            <ul style={{ listStyle: 'none', paddingLeft: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <li>👈 <strong>{t.ahpGuideLeft}</strong></li>
+              <li>⚪ <strong>{t.ahpGuideCenter}</strong></li>
+              <li>👉 <strong>{t.ahpGuideRight}</strong></li>
+            </ul>
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px dashed rgba(59, 130, 246, 0.15)', color: 'var(--text-muted)' }}>
+              {t.ahpGuideExample}
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* PRESETS LIST WITH DYNAMIC DESCRIPTION */}
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+            {t.presetTitle}
+          </span>
+          {[
+            { key: 'equal',       label: t.presetEqual },
+            { key: 'price_first', label: t.presetPrice },
+            { key: 'range_first', label: t.presetRange },
+            { key: 'speed_first', label: t.presetSpeed },
+            { key: 'balanced_ev', label: t.presetOptimal },
+          ].map(p => (
+            <button
+              key={p.key}
+              className={`preset-chip ${activePreset === p.key ? 'active' : ''}`}
+              type="button"
+              onClick={() => applyPreset(p.key)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {activePreset && (
+          <div style={{ marginTop: 8, fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+            » {presetDescriptions[activePreset]}
+          </div>
+        )}
+      </div>
+
+      {/* FORM OF PAIRWISE COMPARISONS */}
       <form onSubmit={handleSubmit}>
-        {/* PAIRWISE SLIDERS */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: 28 }}>
           {PAIRS.map(([i, j], idx) => {
             const pos = sliders[idx];
-            const label = ahpLabel(pos);
             const isLeftDom = pos < 9;
             const isRightDom = pos > 9;
+            
             return (
-              <div className="comparison-row" key={idx}>
+              <div 
+                className={`comparison-row ${isLeftDom ? 'criteria-active-left' : isRightDom ? 'criteria-active-right' : ''}`} 
+                key={idx}
+              >
                 <div className="criteria-labels">
-                  <div className="criteria-name" style={{ color: isLeftDom ? 'var(--green-dark)' : 'var(--text-secondary)' }}>
-                    <span className="criteria-icon" style={{ background: isLeftDom ? 'rgba(0,196,106,0.12)' : undefined }}>
+                  {/* Left Label */}
+                  <div className="criteria-name" style={{ justifyContent: 'flex-start' }}>
+                    <span className="criteria-icon-box criteria-icon-left">
                       {CRITERIA[i].icon}
                     </span>
-                    {CRITERIA[i].label}
-                    {isLeftDom && <span style={{ fontSize: '0.65rem', color: 'var(--green)', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, letterSpacing: '0.1em' }}>▲</span>}
+                    <span className="criteria-name-left">{t[CRITERIA[i].labelKey]}</span>
                   </div>
 
-                  <div style={{ textAlign: 'center', flex: 1 }}>
-                    <div className="slider-current" style={{ color: pos === 9 ? 'var(--text-muted)' : isLeftDom ? 'var(--green)' : 'var(--blue)' }}>
-                      {label}
-                    </div>
+                  {/* Dynamic comparison natural description */}
+                  <div className="slider-current-text" style={{ color: pos === 9 ? 'var(--text-muted)' : isLeftDom ? 'var(--green)' : 'var(--blue)' }}>
+                    {getComparisonText(i, j, pos)}
                   </div>
 
-                  <div className="criteria-name" style={{ justifyContent: 'flex-end', color: isRightDom ? 'var(--blue)' : 'var(--text-secondary)' }}>
-                    {isRightDom && <span style={{ fontSize: '0.65rem', color: 'var(--blue)', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, letterSpacing: '0.1em' }}>▲</span>}
-                    {CRITERIA[j].label}
-                    <span className="criteria-icon" style={{ background: isRightDom ? 'rgba(0,102,255,0.1)' : undefined }}>
+                  {/* Right Label */}
+                  <div className="criteria-name" style={{ justifyContent: 'flex-end' }}>
+                    <span className="criteria-name-right">{t[CRITERIA[j].labelKey]}</span>
+                    <span className="criteria-icon-box criteria-icon-right">
                       {CRITERIA[j].icon}
                     </span>
                   </div>
                 </div>
 
+                {/* Range Input element */}
                 <div className="slider-wrap">
                   <input
                     type="range"
-                    className="ahp-slider"
+                    className={`ahp-slider ${getSliderClass(pos)}`}
                     min="1" max="17" step="1"
                     value={pos}
                     onChange={(e) => handleSliderChange(idx, e.target.value)}
                     style={{
                       background: `linear-gradient(90deg, 
                         var(--green) 0%, 
-                        var(--surface-3) ${((pos - 1) / 16 * 100)}%, 
-                        var(--surface-3) ${((pos - 1) / 16 * 100)}%, 
+                        var(--glass-border) ${((pos - 1) / 16 * 100)}%, 
+                        var(--glass-border) ${((pos - 1) / 16 * 100)}%, 
                         var(--blue) 100%)`
                     }}
                   />
                   <div className="slider-value-display">
-                    <span className="slider-val" style={{ color: 'var(--green-dark)' }}>←{CRITERIA[i].label}</span>
-                    <span className="slider-val" style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>Sama</span>
-                    <span className="slider-val" style={{ color: 'var(--blue)', textAlign: 'right' }}>{CRITERIA[j].label}→</span>
+                    <span>← {t[CRITERIA[i].labelKey]}</span>
+                    <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>Sama / Equal</span>
+                    <span style={{ textAlign: 'right' }}>{t[CRITERIA[j].labelKey]} →</span>
                   </div>
                 </div>
               </div>
@@ -224,38 +277,78 @@ const AHPForm = ({ onWeightsCalculated }) => {
           })}
         </div>
 
-        {/* SUBMIT */}
+        {/* CONTROLS */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <button type="submit" className="btn btn-green" disabled={loading}>
             {loading ? (
-              <><RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> Menghitung...</>
+              <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> {t.ahpCalculating}</>
             ) : (
-              <><CheckCircle size={16} /> Hitung Bobot AHP</>
+              <><CheckCircle size={14} /> {t.ahpSubmit}</>
             )}
           </button>
-          <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Batas CR ≤ 0.10
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <Info size={12} />
+            {t.ahpCrInfo}
           </div>
         </div>
       </form>
 
-      {/* FEEDBACK */}
-      {error && (
-        <div className="alert alert-error" style={{ marginTop: 20 }}>
-          <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-          <span>{error}</span>
+      {/* ERROR PANELS */}
+      {error === 'network' && (
+        <div className="alert alert-error">
+          <AlertTriangle size={16} style={{ flexShrink: 0, color: 'var(--red)' }} />
+          <span>
+            {lang === 'id' 
+              ? 'Koneksi ke backend Flask terputus. Pastikan server Flask berjalan di port 5000.' 
+              : 'Flask backend unreachable. Verify Flask server is active on port 5000.'}
+          </span>
+        </div>
+      )}
+
+      {error === 'inconsistent' && cr !== null && (
+        <div className="glass-card glass-card-red alert" style={{ borderLeft: '3px solid var(--red)', marginTop: 24, display: 'block' }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+            <AlertTriangle size={16} style={{ color: 'var(--red)', flexShrink: 0 }} />
+            <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              {t.ahpErrorTitle} (CR = {cr.toFixed(3)})
+            </strong>
+          </div>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 16 }}>{t.ahpErrorTip}</p>
+          
+          {/* Quick template triggers in error box */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button 
+              type="button" 
+              className="preset-chip" 
+              onClick={() => applyPreset('equal')}
+              style={{ fontSize: '0.72rem', padding: '6px 12px' }}
+            >
+              🔄 {t.presetEqual}
+            </button>
+            <button 
+              type="button" 
+              className="preset-chip" 
+              onClick={() => applyPreset('balanced_ev')}
+              style={{ fontSize: '0.72rem', padding: '6px 12px' }}
+            >
+              🔄 {t.presetOptimal}
+            </button>
+          </div>
         </div>
       )}
 
       {cr !== null && isConsistent && weights && (
-        <div className="alert alert-success" style={{ marginTop: 20 }}>
-          <CheckCircle size={16} style={{ flexShrink: 0 }} />
+        <div className="alert alert-success">
+          <CheckCircle size={16} style={{ flexShrink: 0, color: 'var(--green)' }} />
           <div>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Konsisten! CR = {cr.toFixed(4)}</div>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
+            <div style={{ fontWeight: 700, fontSize: '0.88rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-primary)', marginBottom: 6 }}>
+              {t.ahpSuccess} (CR = {cr.toFixed(3)})
+            </div>
+            <div style={{ display: 'flex', gap: '16px 24px', flexWrap: 'wrap', marginTop: 10 }}>
               {CRITERIA.map(c => (
-                <span key={c.key} style={{ fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: '0.85rem', color: 'var(--green-dark)' }}>
-                  {c.icon} {c.label}: <strong>{(weights[c.key] * 100).toFixed(1)}%</strong>
+                <span key={c.key} style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: c.color }}>{c.icon}</span>
+                  {t[c.labelKey]}: <strong className="numeric">{(weights[c.key] * 100).toFixed(1)}%</strong>
                 </span>
               ))}
             </div>
