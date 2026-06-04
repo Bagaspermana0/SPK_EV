@@ -10,7 +10,8 @@ import {
   Cpu, 
   Download, 
   Printer,
-  Award
+  Award,
+  RotateCcw
 } from 'lucide-react';
 
 // ─── Hash-Based Gradient Generator ───────────────────────────────────────────
@@ -441,7 +442,7 @@ const CarCard = ({ car, lang, t, onClick }) => {
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-const RankingTable = ({ ranking, totalVehicles, weights, cr, lang, t }) => {
+const RankingTable = ({ ranking, totalVehicles, weights, cr, lang, t, onReset }) => {
   const [search, setSearch] = useState('');
   const [selectedCar, setSelectedCar] = useState(null);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'

@@ -6,7 +6,8 @@ import RankingTable from './components/RankingTable';
 import Charts from './components/Charts';
 import LightningCanvas from './components/LightningCanvas';
 import PhoneMockup from './components/PhoneMockup';
-import { Zap, BarChart2, List, Lock, CircleDollarSign, Battery, Cpu } from 'lucide-react';
+import LoadingOverlay from './components/LoadingOverlay';
+import { Zap, BarChart2, List, Lock, CircleDollarSign, Battery, Cpu, RotateCcw } from 'lucide-react';
 
 const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
@@ -31,7 +32,15 @@ function App() {
   const [heroVisible, setHeroVisible] = useState(false);
   const heroRef = useRef(null);
 
+  const handleReset = () => {
+    setWeights(null);
+    setCr(null);
+    setRanking(null);
+    setActiveTab('ahp');
+  };
+
   useEffect(() => {
+    if (activeTab !== 'ahp') return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         setHeroVisible(entry.isIntersecting);
@@ -48,7 +57,7 @@ function App() {
         observer.unobserve(currentHero);
       }
     };
-  }, []);
+  }, [activeTab]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -117,6 +126,7 @@ function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {loadingSAW && <LoadingOverlay lang={lang} t={t} />}
 
       {/* ── HEADER ── */}
       <header className="site-header">
@@ -366,11 +376,16 @@ function App() {
               cr={cr}
               lang={lang}
               t={t}
+              onReset={handleReset}
             />
             {ranking && (
-              <div style={{ marginTop: 28, display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <div style={{ marginTop: 28, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button className="btn btn-outline" onClick={() => setActiveTab('ahp')}>
                   &larr; {t.tab1}
+                </button>
+                <button className="btn btn-outline btn-reset" onClick={handleReset}>
+                  <RotateCcw size={14} />
+                  {t.resetBtn}
                 </button>
                 <button className="btn btn-green" onClick={() => setActiveTab('charts')}>
                   <List size={14} />
@@ -384,10 +399,14 @@ function App() {
         {/* ── CHARTS TAB — full width ── */}
         {activeTab === 'charts' && ranking && (
           <div className="tab-content">
-            <Charts ranking={ranking} weights={weights} lang={lang} t={t} />
-            <div style={{ marginTop: 28, display: 'flex', gap: 12, justifyContent: 'center' }}>
+            <Charts ranking={ranking} weights={weights} lang={lang} t={t} onReset={handleReset} />
+            <div style={{ marginTop: 28, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button className="btn btn-outline" onClick={() => setActiveTab('results')}>
                 &larr; {t.tab2}
+              </button>
+              <button className="btn btn-outline btn-reset" onClick={handleReset}>
+                <RotateCcw size={14} />
+                {t.resetBtn}
               </button>
             </div>
           </div>

@@ -85,6 +85,11 @@ export const translations = {
     rangeNote: 'Jarak tempuh sekali charge (km)',
     speedNote: 'Kecepatan puncak (km/h)',
     batteryNote: 'Ukuran baterai dalam kWh',
+    resetBtn: 'Mulai Ulang',
+    loadingStep1: 'Mempersiapkan parameter kriteria...',
+    loadingStep2: 'Melakukan normalisasi matriks SAW...',
+    loadingStep3: 'Menghitung skor preferensi kendaraan...',
+    loadingStep4: 'Mengurutkan rekomendasi mobil listrik...',
   },
   en: {
     navTitle: 'Decision Support System',
@@ -160,5 +165,10 @@ export const translations = {
     rangeNote: 'Range on single charge (km)',
     speedNote: 'Maximum speed (km/h)',
     batteryNote: 'Battery capacity in kWh',
+    resetBtn: 'Reset All',
+    loadingStep1: 'Preparing criteria parameters...',
+    loadingStep2: 'Normalizing SAW matrix...',
+    loadingStep3: 'Calculating vehicle preference scores...',
+    loadingStep4: 'Ranking electric vehicles...',
   }
 };
