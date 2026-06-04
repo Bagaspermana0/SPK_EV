@@ -5,6 +5,7 @@ import AHPForm from './components/AHPForm';
 import RankingTable from './components/RankingTable';
 import Charts from './components/Charts';
 import LightningCanvas from './components/LightningCanvas';
+import PhoneMockup from './components/PhoneMockup';
 import { Zap, BarChart2, List, Lock, CircleDollarSign, Battery, Cpu } from 'lucide-react';
 
 const getApiBaseUrl = () => {
@@ -149,6 +150,7 @@ function App() {
         className={`hero ${heroVisible ? 'hero-visible' : 'hero-hidden'}`} 
         ref={heroRef}
       >
+        <LightningCanvas active={heroVisible} />
         <div className="hero-container">
           {/* Left Column: Hero Content */}
           <div className="hero-content">
@@ -182,17 +184,7 @@ function App() {
           {/* Right Column: Tech Mockup */}
           <div className="hero-mockup-col">
             <div className="lightning-wrapper">
-              <LightningCanvas active={heroVisible} />
-              <div className="phone-mockup-wrapper">
-                <div className="phone-notch">
-                  <div className="speaker-bar" />
-                  <div className="camera-lens" />
-                </div>
-                <div 
-                  className="phone-screen" 
-                  style={{ backgroundImage: `url('/phone_mockup.png')` }}
-                />
-              </div>
+              <PhoneMockup />
             </div>
           </div>
         </div>

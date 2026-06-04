@@ -88,16 +88,29 @@ const LightningCanvas = ({ active }) => {
         return;
       }
 
-      // 1. Randomly spawn bolts striking towards the center area (where the phone is)
-      if (Math.random() < 0.04 && bolts.length < 3) {
-        const startFromLeft = Math.random() > 0.5;
-        // Start near screen edges
-        const x1 = startFromLeft ? Math.random() * 50 : canvas.width - Math.random() * 50;
-        const y1 = Math.random() * canvas.height;
+      // 1. Spawn bolts striking both the text area (left/top) and phone mockup area (right/bottom)
+      if (Math.random() < 0.04 && bolts.length < 4) {
+        const isMobile = canvas.width < 968;
+        const strikeLeft = Math.random() > 0.55; // Slightly favor text strikes for the visual effect on title
         
-        // Strike towards the phone shell center area (center column)
-        const x2 = canvas.width / 2 + (Math.random() - 0.5) * 120;
-        const y2 = canvas.height / 2 + (Math.random() - 0.5) * 200;
+        let x1, y1, x2, y2;
+        
+        if (strikeLeft) {
+          // Target: Hero text area (left side of desktop, top on mobile)
+          x2 = isMobile ? canvas.width * 0.5 + (Math.random() - 0.5) * 200 : canvas.width * 0.3 + (Math.random() - 0.5) * 200;
+          y2 = isMobile ? canvas.height * 0.25 + (Math.random() - 0.5) * 100 : canvas.height * 0.35 + (Math.random() - 0.5) * 120;
+          
+          // Strike from the edges
+          x1 = x2 + (Math.random() - 0.5) * 150;
+          y1 = 0;
+        } else {
+          // Target: Phone mockup area (right side of desktop, bottom on mobile)
+          x2 = isMobile ? canvas.width * 0.5 + (Math.random() - 0.5) * 150 : canvas.width * 0.75 + (Math.random() - 0.5) * 120;
+          y2 = isMobile ? canvas.height * 0.7 + (Math.random() - 0.5) * 120 : canvas.height * 0.5 + (Math.random() - 0.5) * 180;
+          
+          x1 = x2 + (Math.random() - 0.5) * 200;
+          y1 = 0;
+        }
         
         const newBolt = createBolt(x1, y1, x2, y2);
         bolts.push(newBolt);
@@ -111,8 +124,7 @@ const LightningCanvas = ({ active }) => {
         const bolt = bolts[i];
         
         ctx.save();
-        // Glow effect
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 15;
         ctx.shadowColor = bolt.color;
         ctx.strokeStyle = bolt.color;
         ctx.globalAlpha = bolt.life;
@@ -129,7 +141,7 @@ const LightningCanvas = ({ active }) => {
         ctx.shadowBlur = 4;
         ctx.shadowColor = '#ffffff';
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.0;
+        ctx.lineWidth = 1.2;
         ctx.stroke();
         ctx.restore();
 
