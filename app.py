@@ -31,6 +31,11 @@ def get_icon(icon_name, size=16, color="currentColor"):
     }
     return icons.get(icon_name, "")
 
+# Helper to render clean HTML strings and prevent markdown codeblock rendering issues
+def render_html(html_str):
+    cleaned = "\n".join([line.strip() for line in html_str.split("\n")])
+    st.markdown(cleaned, unsafe_allow_html=True)
+
 # Custom CSS styling reflecting the React App Dark Glassmorphism design system
 st.markdown(f"""
 <style>
@@ -664,7 +669,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### ⚡ Detail Sistem")
-    st.markdown(f"""
+    render_html(f"""
     <div style="font-size: 0.8rem; line-height: 1.6; color: #94A3B8;">
         <b>Engine:</b> AHP Matrix + SAW Calculation<br>
         <b>Database Size:</b> {len(vehicles_df)} alternatif<br>
@@ -674,13 +679,13 @@ with st.sidebar:
         - {get_icon("zap", 12, "#3B82F6")} Kecepatan (Benefit)<br>
         - {get_icon("cpu", 12, "#06B6D4")} Baterai (Benefit)
     </div>
-    """, unsafe_allow_html=True)
+    """)
 
 # ──────────────────────────────────────────────────────────
 # LOADING SCREEN INTERACTION
 # ──────────────────────────────────────────────────────────
 if st.session_state.show_loading:
-    st.markdown(f"""
+    render_html(f"""
     <div class="loading-overlay">
         <div class="loading-container">
             <div class="loading-glow-bg"></div>
@@ -702,7 +707,7 @@ if st.session_state.show_loading:
             </div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """)
     time.sleep(1.5)
     st.session_state.show_loading = False
     st.session_state.stage = 2
@@ -782,7 +787,7 @@ if st.session_state.stage == 1:
         c_colors = {"price": "#F59E0B", "range": "#00D97E", "top_speed": "#3B82F6", "battery": "#06B6D4"}
         
         for key, val in st.session_state.weights.items():
-            st.markdown(f"""
+            render_html(f"""
             <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; align-items: center;">
                 <span style="font-weight: 700; color: #F1F5F9; display: flex; align-items: center; gap: 4px;">
                     {get_icon(c_icons[key], 12, c_colors[key])} {c_names[key]}
@@ -792,7 +797,7 @@ if st.session_state.stage == 1:
             <div style="height: 4px; background: rgba(255,255,255,0.04); margin-bottom: 12px; position: relative;">
                 <div style="height: 100%; background: {c_colors[key]}; width: {val*100}%; box-shadow: 0 0 6px {c_colors[key]};"></div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
         st.markdown('</div>', unsafe_allow_html=True)
 
         # Submit controls for Direct Weights
@@ -804,17 +809,17 @@ if st.session_state.stage == 1:
                 st.session_state.show_loading = True
                 st.rerun()
         with cols[1]:
-            st.markdown(f"""
+            render_html(f"""
             <div style="font-size: 0.72rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-top: 10px; font-weight: 700; text-transform: uppercase;">
                 {get_icon("help", 12, "#475569")} Bobot langsung digunakan. Siap melanjutkan ke analisis pemeringkatan SAW.
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
     else:
         # AHP Matrix Mode
         # Expandable Guide Panel
         with st.expander(f"❔ Panduan Penggunaan Skala AHP", expanded=True):
-            st.markdown(f"""
+            render_html(f"""
             <div style="font-size: 0.85rem; line-height: 1.6; color: #94A3B8;">
                 <ul>
                     <li>Geser ke <b>KIRI</b> untuk memprioritaskan kriteria sebelah kiri.</li>
@@ -823,7 +828,7 @@ if st.session_state.stage == 1:
                     <li>Semakin jauh dari tengah, kriteria terpilih dinilai semakin penting (Skala Saaty 2 hingga 9).</li>
                 </ul>
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
         # Preset selection
         st.markdown('<div class="glass-card" style="padding: 16px 20px;">', unsafe_allow_html=True)
@@ -864,7 +869,7 @@ if st.session_state.stage == 1:
             
             for idx, (i, j, left_name, right_name, icon_l, icon_r) in enumerate(PAIRS):
                 text_color = "var(--green)" if sliders[idx] < 9 else ("var(--blue)" if sliders[idx] > 9 else "var(--text-muted)")
-                st.markdown(f"""
+                render_html(f"""
                 <div style="display: flex; justify-content: space-between; margin-top: 12px; margin-bottom: 2px;">
                     <span style="font-weight: 700; color: #F1F5F9; font-size: 0.85rem;">{get_icon(icon_l, 14, "#00D97E")} {left_name}</span>
                     <span style="font-weight: 700; color: #F1F5F9; font-size: 0.85rem;">{right_name} {get_icon(icon_r, 14, "#3B82F6")}</span>
@@ -872,7 +877,7 @@ if st.session_state.stage == 1:
                 <div style="font-size: 0.8rem; color: {text_color}; margin-bottom: 6px;">
                     {get_comparison_text(left_name, right_name, sliders[idx])}
                 </div>
-                """, unsafe_allow_html=True)
+                """)
                 
                 val = st.slider(
                     f"slider_widget_{idx}",
@@ -923,7 +928,7 @@ if st.session_state.stage == 1:
                            "Terdapat kontradiksi nilai (misal: A > B, B > C, tetapi C > A). "
                            "Gunakan tombol Auto-Fix di bawah untuk memperbaikinya secara otomatis.")
                            
-            st.markdown(f"""
+            render_html(f"""
             <div class="glass-card" style="border-left: 4px solid {box_border_color}; background: {box_bg_color}; padding: 18px; margin-bottom: 15px;">
                 <div style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: {box_text_color}; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
                     {box_icon} {status_title}
@@ -935,7 +940,7 @@ if st.session_state.stage == 1:
                     {status_desc}
                 </p>
             </div>
-            """, unsafe_allow_html=True)
+            """)
             
             # Auto-Fix Button (Solves usability problem)
             if not is_consistent and weights_raw is not None:
@@ -955,7 +960,7 @@ if st.session_state.stage == 1:
                 c_colors = {"price": "#F59E0B", "range": "#00D97E", "top_speed": "#3B82F6", "battery": "#06B6D4"}
                 
                 for key, val in weights.items():
-                    st.markdown(f"""
+                    render_html(f"""
                     <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; align-items: center;">
                         <span style="font-weight: 700; color: #F1F5F9; display: flex; align-items: center; gap: 4px;">
                             {get_icon(c_icons[key], 12, c_colors[key])} {c_names[key]}
@@ -965,7 +970,7 @@ if st.session_state.stage == 1:
                     <div style="height: 4px; background: rgba(255,255,255,0.04); margin-bottom: 12px; position: relative;">
                         <div style="height: 100%; background: {c_colors[key]}; width: {val*100}%; box-shadow: 0 0 6px {c_colors[key]};"></div>
                     </div>
-                    """, unsafe_allow_html=True)
+                    """)
                 st.markdown('</div>', unsafe_allow_html=True)
                 
         # Submit controls
@@ -978,17 +983,17 @@ if st.session_state.stage == 1:
                     st.session_state.show_loading = True
                     st.rerun()
             with cols[1]:
-                st.markdown(f"""
+                render_html(f"""
                 <div style="font-size: 0.72rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-top: 10px; font-weight: 700; text-transform: uppercase;">
                     {get_icon("help", 12, "#475569")} Nilai CR Konsisten. Siap melanjutkan ke analisis pemeringkatan SAW.
                 </div>
-                """, unsafe_allow_html=True)
+                """)
         else:
-            st.markdown(f"""
+            render_html(f"""
             <div style="font-size: 0.80rem; color: #EF4444; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
                 {get_icon("help", 14, "#EF4444")} Perhitungan terkunci. Silakan gunakan tombol "Auto-Fix" di atas untuk memperbaiki logika secara otomatis.
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
 # ──────────────────────────────────────────────────────────
 # STAGE 2: SAW RESULTS TABLE
@@ -1059,7 +1064,8 @@ elif st.session_state.stage == 2:
             </table>
         </div>
         """
-        return html
+        cleaned_html = "\n".join([line.strip() for line in html.split("\n")])
+        return cleaned_html
 
     st.markdown(generate_table_html(ranking_result.head(10)), unsafe_allow_html=True)
     
