@@ -517,6 +517,35 @@ st.markdown(f"""
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
       transform: translateY(-1px) !important;
     }}
+
+    /* Responsive styling for Mobile */
+    @media (max-width: 768px) {{
+      .site-header {{
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        padding: 15px 20px !important;
+      }}
+      .site-logo {{
+        font-size: 1rem !important;
+      }}
+      .step-tabs {{
+        flex-direction: column !important;
+      }}
+      .step-tab {{
+        padding: 12px 16px !important;
+        border-bottom: none !important;
+        border-left: 2px solid transparent !important;
+        justify-content: flex-start !important;
+      }}
+      .step-tab.active {{
+        border-left: 2px solid #00D97E !important;
+        background: rgba(0, 217, 126, 0.03) !important;
+      }}
+      .glass-card {{
+        padding: 16px !important;
+      }}
+    }}
 </style>
 """, unsafe_allow_html=True)
 
