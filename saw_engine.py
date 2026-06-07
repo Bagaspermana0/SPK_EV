@@ -37,7 +37,7 @@ class SAWCalculator:
         """
         min_val = values.min()
         if min_val == 0:
-            return values
+            return np.where(values == 0, 1.0, 0.0)
         return min_val / values
     
     def normalize_all_criteria(self):

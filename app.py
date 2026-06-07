@@ -560,13 +560,13 @@ if "stage" not in st.session_state:
 if "active_preset" not in st.session_state:
     st.session_state.active_preset = "equal"
 
-# Preset Profiles Mapping for Guided AHP (3 sliders: ahp_s1, ahp_s2, ahp_s3)
+# Preset Profiles Mapping for Guided AHP (4 sliders: ahp_s1, ahp_s2, ahp_s3, ahp_s4)
 PRESETS = {
-    "equal": [0, 0, 0],
-    "price_first": [-4, 0, 0],
-    "range_first": [4, -4, 0],
-    "speed_first": [0, 4, -4],
-    "balanced_ev": [-1, 0, 0],
+    "equal": [0, 0, 0, 0],
+    "price_first": [-4, 0, 0, -4],
+    "range_first": [4, -4, 0, 0],
+    "speed_first": [0, 4, -4, 0],
+    "balanced_ev": [-1, 0, 0, -1],
 }
 
 PRESET_DESCRIPTIONS = {
@@ -584,6 +584,8 @@ if "ahp_s2" not in st.session_state:
     st.session_state.ahp_s2 = 0
 if "ahp_s3" not in st.session_state:
     st.session_state.ahp_s3 = 0
+if "ahp_s4" not in st.session_state:
+    st.session_state.ahp_s4 = 0
 
 def map_slider_to_ahp(val):
     if val < 0:
@@ -593,7 +595,7 @@ def map_slider_to_ahp(val):
     else:
         return 1.0
 
-def build_guided_matrix(v1, v2, v3):
+def build_guided_matrix(v1, v2, v3, v4):
     matrix = np.ones((4, 4))
     
     matrix[0, 1] = map_slider_to_ahp(v1)
@@ -605,14 +607,14 @@ def build_guided_matrix(v1, v2, v3):
     matrix[2, 3] = map_slider_to_ahp(v3)
     matrix[3, 2] = 1 / matrix[2, 3]
     
+    matrix[0, 3] = map_slider_to_ahp(v4)
+    matrix[3, 0] = 1 / matrix[0, 3]
+    
     matrix[0, 2] = matrix[0, 1] * matrix[1, 2]
     matrix[2, 0] = 1 / matrix[0, 2]
     
     matrix[1, 3] = matrix[1, 2] * matrix[2, 3]
     matrix[3, 1] = 1 / matrix[1, 3]
-    
-    matrix[0, 3] = matrix[0, 2] * matrix[2, 3]
-    matrix[3, 0] = 1 / matrix[0, 3]
     
     return matrix
 
@@ -792,6 +794,7 @@ if st.session_state.stage == 1:
                 st.session_state.ahp_s1 = PRESETS[key][0]
                 st.session_state.ahp_s2 = PRESETS[key][1]
                 st.session_state.ahp_s3 = PRESETS[key][2]
+                st.session_state.ahp_s4 = PRESETS[key][3]
                 st.rerun()
                 
     preset_desc = PRESET_DESCRIPTIONS.get(st.session_state.active_preset, "Kustom (Matriks perbandingan disesuaikan secara manual).")
@@ -813,24 +816,30 @@ if st.session_state.stage == 1:
                 
         # Slider 1
         st.markdown(f'<div style="font-weight: 700; color: #F59E0B;">{get_icon("dollar", 14)} Harga vs {get_icon("battery", 14)} Range</div>', unsafe_allow_html=True)
-        v1 = st.slider("Harga vs Range", -8, 8, st.session_state.ahp_s1, 1, key="slider_1", label_visibility="collapsed")
+        v1 = st.slider("Harga vs Range", -4, 4, st.session_state.ahp_s1, 1, key="slider_1", label_visibility="collapsed")
         st.markdown(f'<div style="font-size: 0.75rem; color: #94A3B8; text-align: center; margin-bottom: 20px;">{format_slider_label(v1, "Harga", "Range")}</div>', unsafe_allow_html=True)
 
         # Slider 2
         st.markdown(f'<div style="font-weight: 700; color: #00D97E;">{get_icon("battery", 14)} Range vs {get_icon("zap", 14)} Kecepatan</div>', unsafe_allow_html=True)
-        v2 = st.slider("Range vs Kecepatan", -8, 8, st.session_state.ahp_s2, 1, key="slider_2", label_visibility="collapsed")
+        v2 = st.slider("Range vs Kecepatan", -4, 4, st.session_state.ahp_s2, 1, key="slider_2", label_visibility="collapsed")
         st.markdown(f'<div style="font-size: 0.75rem; color: #94A3B8; text-align: center; margin-bottom: 20px;">{format_slider_label(v2, "Range", "Kecepatan")}</div>', unsafe_allow_html=True)
 
         # Slider 3
         st.markdown(f'<div style="font-weight: 700; color: #3B82F6;">{get_icon("zap", 14)} Kecepatan vs {get_icon("cpu", 14)} Baterai</div>', unsafe_allow_html=True)
-        v3 = st.slider("Kecepatan vs Baterai", -8, 8, st.session_state.ahp_s3, 1, key="slider_3", label_visibility="collapsed")
-        st.markdown(f'<div style="font-size: 0.75rem; color: #94A3B8; text-align: center;">{format_slider_label(v3, "Kecepatan", "Baterai")}</div>', unsafe_allow_html=True)
+        v3 = st.slider("Kecepatan vs Baterai", -4, 4, st.session_state.ahp_s3, 1, key="slider_3", label_visibility="collapsed")
+        st.markdown(f'<div style="font-size: 0.75rem; color: #94A3B8; text-align: center; margin-bottom: 20px;">{format_slider_label(v3, "Kecepatan", "Baterai")}</div>', unsafe_allow_html=True)
+
+        # Slider 4
+        st.markdown(f'<div style="font-weight: 700; color: #EAB308;">{get_icon("dollar", 14)} Harga vs {get_icon("cpu", 14)} Baterai</div>', unsafe_allow_html=True)
+        v4 = st.slider("Harga vs Baterai", -4, 4, st.session_state.ahp_s4, 1, key="slider_4", label_visibility="collapsed")
+        st.markdown(f'<div style="font-size: 0.75rem; color: #94A3B8; text-align: center;">{format_slider_label(v4, "Harga", "Baterai")}</div>', unsafe_allow_html=True)
 
         # Detect manual slider movement
-        if (v1 != st.session_state.ahp_s1) or (v2 != st.session_state.ahp_s2) or (v3 != st.session_state.ahp_s3):
+        if (v1 != st.session_state.ahp_s1) or (v2 != st.session_state.ahp_s2) or (v3 != st.session_state.ahp_s3) or (v4 != st.session_state.ahp_s4):
             st.session_state.ahp_s1 = v1
             st.session_state.ahp_s2 = v2
             st.session_state.ahp_s3 = v3
+            st.session_state.ahp_s4 = v4
             st.session_state.active_preset = "custom"
             st.rerun()
 
@@ -840,7 +849,11 @@ if st.session_state.stage == 1:
         st.markdown(f'<h3>{get_icon("list", 18, "#F1F5F9")}&nbsp; Validasi Matriks</h3>', unsafe_allow_html=True)
         
         # Calculate AHP Matrix and Weights
-        matrix = build_guided_matrix(v1, v2, v3)
+        matrix = build_guided_matrix(v1, v2, v3, v4)
+        
+        if matrix.max() > 9.01:
+            st.markdown('<div style="padding: 10px; background-color: rgba(239, 68, 68, 0.1); border: 1px solid #EF4444; border-radius: 5px; color: #EF4444; font-size: 0.8rem; margin-bottom: 15px;">Warning: Terdapat nilai turunan matriks yang melebihi batas skala Saaty (>9). Pertimbangkan penyesuaian slider.</div>', unsafe_allow_html=True)
+            
         ahp = AHPCalculator()
         weights_arr, cr, lambda_max, msg = ahp.calculate(matrix)
         
@@ -855,16 +868,23 @@ if st.session_state.stage == 1:
         else:
             weights_dict = None
             
+        # UI for Matrix Validity
+        cr_percent = cr * 100
+        cr_status = "Konsisten" if cr <= 0.10 else "Tidak Konsisten"
+        cr_color = "var(--green)" if cr <= 0.10 else "#EF4444"
+        cr_icon = "zap" if cr <= 0.10 else "help" # using existing icon
+        cr_msg = "Logika Anda masuk akal matematis." if cr <= 0.10 else "Matriks tidak konsisten! Sesuaikan ulang slider."
+        
         render_html(f"""
-        <div class="glass-card" style="border-left: 4px solid var(--green); background: rgba(0, 217, 126, 0.02); padding: 18px; margin-bottom: 15px;">
-            <div style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--green); display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                {get_icon("zap", 16, "#00D97E")} Logika Konsisten
+        <div class="glass-card" style="margin-bottom: 20px;">
+            <div style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: {cr_color}; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                {get_icon(cr_icon, 16, cr_color)} {cr_status}
             </div>
             <div style="font-size: 0.72rem; color: #475569; margin-bottom: 10px; font-family: monospace;">
-                Consistency Ratio (CR): <strong style="color: var(--green); font-size: 0.85rem;">0.0%</strong> (Batas: 10.0%)
+                Consistency Ratio (CR): <strong style="color: {cr_color}; font-size: 0.85rem;">{cr_percent:.1f}%</strong> (Batas: 10.0%)
             </div>
             <p style="margin: 0; font-size: 0.78rem; color: #94A3B8; line-height: 1.4;">
-                Dengan sistem Guided AHP (Spanning Tree), nilai CR selalu terkunci di 0%. Bebas dari error kontradiksi matematis.
+                {cr_msg}
             </p>
         </div>
         """)
@@ -895,10 +915,14 @@ if st.session_state.stage == 1:
     st.markdown("---")
     cols = st.columns([2.5, 7.5])
     with cols[0]:
-        if st.button("Hitung SAW & Lihat Hasil", type="primary", use_container_width=True, key="submit_direct_weights"):
-            trigger_confetti()
-            st.session_state.show_loading = True
-            st.rerun()
+        if cr > 0.10:
+            st.markdown('<div style="padding: 10px; background-color: rgba(239, 68, 68, 0.1); border-radius: 5px; color: #EF4444; font-size: 0.8rem; margin-bottom: 10px;">Nilai CR > 10%. Silakan perbaiki slider Anda terlebih dahulu.</div>', unsafe_allow_html=True)
+            st.button("Hitung SAW & Lihat Hasil", type="primary", use_container_width=True, key="submit_direct_weights_disabled", disabled=True)
+        else:
+            if st.button("Hitung SAW & Lihat Hasil", type="primary", use_container_width=True, key="submit_direct_weights"):
+                trigger_confetti()
+                st.session_state.show_loading = True
+                st.rerun()
     with cols[1]:
         render_html(f"""
         <div style="font-size: 0.72rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-top: 10px; font-weight: 700; text-transform: uppercase;">
@@ -925,7 +949,7 @@ elif st.session_state.stage == 2:
     st.session_state.saw_result = ranking_result
 
     # Display Top 10 using beautiful HTML custom table
-    st.markdown(f'<h3>{get_icon("award", 18, "#F1F5F9")}&nbsp; Top 10 Mobil Listrik Terbaik</h3>', unsafe_allow_html=True)
+    st.markdown('<h3>Top 10 Mobil Listrik Terbaik</h3>', unsafe_allow_html=True)
     
     def generate_table_html(df):
         html = """
@@ -983,14 +1007,14 @@ elif st.session_state.stage == 2:
     st.markdown("---")
     
     # Search & Filter
-    st.markdown(f'<h3>{get_icon("search", 18, "#F1F5F9")}&nbsp; Cari Mobil</h3>', unsafe_allow_html=True)
+    st.markdown('<h3>Cari Mobil</h3>', unsafe_allow_html=True)
     search_term = st.text_input("Cari berdasarkan nama mobil listrik:", "", placeholder="Ketik nama mobil (misal: Tesla, Ioniq, ID.4...)")
     if search_term:
         filtered = ranking_result[ranking_result['name'].str.contains(search_term, case=False)]
         if len(filtered) > 0:
             st.markdown(generate_table_html(filtered.head(10)), unsafe_allow_html=True)
         else:
-            st.info("Mobil tidak ditemukan dalam database.")
+            st.markdown('<div style="padding:10px; background-color: rgba(255,255,255,0.05); color: #cbd5e1; border-radius: 5px;">Mobil tidak ditemukan dalam database.</div>', unsafe_allow_html=True)
 
     # Controls
     st.markdown("---")
@@ -1021,7 +1045,7 @@ elif st.session_state.stage == 3:
     top_10 = ranking_result.head(10)
 
     # Bar chart for Top 10
-    st.markdown(f'<h3>{get_icon("chart", 18, "#F1F5F9")}&nbsp; Perbandingan Skor SAW (Top 10)</h3>', unsafe_allow_html=True)
+    st.markdown('<h3>Perbandingan Skor SAW (Top 10)</h3>', unsafe_allow_html=True)
     
     fig_bar = go.Figure(data=[
         go.Bar(
@@ -1057,7 +1081,7 @@ elif st.session_state.stage == 3:
     st.markdown("---")
 
     # Radar Chart for Top 3
-    st.markdown(f'<h3>{get_icon("target", 18, "#F1F5F9")}&nbsp; Profil Perbandingan Spesifikasi (Top 3)</h3>', unsafe_allow_html=True)
+    st.markdown('<h3>Profil Perbandingan Spesifikasi (Top 3)</h3>', unsafe_allow_html=True)
     
     top_3 = ranking_result.head(3)
     normalized_data = []
@@ -1122,7 +1146,7 @@ elif st.session_state.stage == 3:
     st.markdown("---")
 
     # Detailed Stats Summary Cards
-    st.markdown(f'<h3>{get_icon("trending-up", 18, "#F1F5F9")}&nbsp; Ringkasan Keputusan</h3>', unsafe_allow_html=True)
+    st.markdown('<h3>Ringkasan Keputusan</h3>', unsafe_allow_html=True)
     
     cols = st.columns(4)
     with cols[0]:
