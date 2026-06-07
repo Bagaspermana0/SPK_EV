@@ -731,7 +731,8 @@ if st.session_state.stage == 1:
                     st.session_state.sliders = PRESETS[key]
                     st.rerun()
                     
-    st.markdown(f'<div style="margin-top: 10px; font-size: 0.78rem; color: #475569; font-family: monospace;">» {PRESET_DESCRIPTIONS[st.session_state.active_preset]}</div>', unsafe_allow_html=True)
+    preset_desc = PRESET_DESCRIPTIONS.get(st.session_state.active_preset, "Kustom (Matriks perbandingan disesuaikan secara manual).")
+    st.markdown(f'<div style="margin-top: 10px; font-size: 0.78rem; color: #475569; font-family: monospace;">» {preset_desc}</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Calculate weights and consistency in real time
