@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from ahp_engine import AHPCalculator
 from saw_engine import SAWCalculator
 import plotly.graph_objects as go
 import plotly.express as px
@@ -488,6 +487,75 @@ st.markdown(f"""
       0% {{ transform: scale(0.8); opacity: 0.5; }}
       100% {{ transform: scale(1.2); opacity: 1; }}
     }}
+
+    /* Sidebar Navigation radio options container override */
+    div[data-testid="stSidebar"] div[role="radiogroup"] {{
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+    }}
+
+    div[data-testid="stSidebar"] div[role="radiogroup"] label {{
+      background: rgba(255, 255, 255, 0.02) !important;
+      border: 1px solid rgba(255, 255, 255, 0.07) !important;
+      padding: 12px 16px !important;
+      border-radius: 0px !important;
+      color: #94A3B8 !important;
+      font-size: 0.8rem !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.08em !important;
+      cursor: pointer !important;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%) !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      margin: 0 !important;
+    }}
+
+    div[data-testid="stSidebar"] div[role="radiogroup"] label:hover {{
+      background: rgba(0, 217, 126, 0.03) !important;
+      border-color: rgba(0, 217, 126, 0.3) !important;
+      color: #00D97E !important;
+      padding-left: 20px !important;
+    }}
+
+    /* Style the selected radio item using :has selector */
+    div[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked),
+    div[data-testid="stSidebar"] div[role="radiogroup"] label:has(input[checked]),
+    div[data-testid="stSidebar"] div[role="radiogroup"] label[data-checked="true"] {{
+      background: rgba(0, 217, 126, 0.08) !important;
+      border-color: #00D97E !important;
+      color: #00D97E !important;
+      box-shadow: 0 0 15px rgba(0, 217, 126, 0.1) !important;
+      border-left: 3px solid #00D97E !important;
+    }}
+
+    /* Hide the default radio circle icon completely */
+    div[data-testid="stSidebar"] div[role="radiogroup"] label div[role="presentation"] {{
+      display: none !important;
+    }}
+
+    /* Hide the radio text wrap helper */
+    div[data-testid="stSidebar"] div[role="radiogroup"] label div[data-testid="stMarkdownContainer"] p {{
+      margin: 0 !important;
+      font-weight: 700 !important;
+      font-family: 'Segoe UI', Arial, sans-serif !important;
+    }}
+
+    /* Adjust sidebar labels */
+    div[data-testid="stSidebar"] div[data-testid="stWidgetLabel"] p {{
+      font-size: 0.72rem !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.1em !important;
+      color: #475569 !important;
+      font-weight: 800 !important;
+      margin-bottom: 8px !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -495,84 +563,39 @@ st.markdown(f"""
 if "stage" not in st.session_state:
     st.session_state.stage = 1
     st.session_state.weights = None
-    st.session_state.cr = None
     st.session_state.saw_result = None
     st.session_state.show_loading = False
 
-# AHP Sliders session state (6 pairwise comparisons)
-if "sliders" not in st.session_state:
-    st.session_state.sliders = [9, 9, 9, 9, 9, 9]
+# Direct Weights session state (Harga, Range, Kecepatan, Baterai)
+if "direct_price" not in st.session_state:
+    st.session_state.direct_price = 25
+if "direct_range" not in st.session_state:
+    st.session_state.direct_range = 25
+if "direct_speed" not in st.session_state:
+    st.session_state.direct_speed = 25
+if "direct_battery" not in st.session_state:
+    st.session_state.direct_battery = 25
 
 # Preset selector state
 if "active_preset" not in st.session_state:
     st.session_state.active_preset = "equal"
 
-# Preset Profiles Mapping (Matches old React code)
+# Preset Profiles Mapping (Direct Weights percentage allocations)
 PRESETS = {
-    "equal": [9, 9, 9, 9, 9, 9],
-    "price_first": [5, 5, 6, 9, 9, 9],
-    "range_first": [12, 9, 9, 6, 6, 9],
-    "speed_first": [9, 12, 9, 12, 9, 6],
-    "balanced_ev": [7, 8, 8, 9, 9, 9],
+    "equal": [25, 25, 25, 25],
+    "price_first": [50, 20, 15, 15],
+    "range_first": [20, 50, 15, 15],
+    "speed_first": [20, 15, 50, 15],
+    "balanced_ev": [30, 30, 20, 20],
 }
 
 PRESET_DESCRIPTIONS = {
     "equal": "Semua kriteria memiliki bobot kepentingan sama (25%).",
-    "price_first": "Prioritas utama pada aspek anggaran/harga murah.",
-    "range_first": "Prioritas pada efisiensi daya dan jarak tempuh terjauh.",
-    "speed_first": "Prioritas pada tenaga mesin dan kecepatan tinggi.",
+    "price_first": "Prioritas utama pada aspek anggaran/harga murah (Harga: 50%).",
+    "range_first": "Prioritas pada efisiensi daya dan jarak tempuh terjauh (Range: 50%).",
+    "speed_first": "Prioritas pada tenaga mesin dan kecepatan tinggi (Kecepatan: 50%).",
     "balanced_ev": "Kompromi optimal antara efisiensi, performa, dan harga.",
 }
-
-# AHP Matrix Pairs index definition
-PAIRS = [
-    (0, 1, "Harga", "Range", "dollar", "battery"),
-    (0, 2, "Harga", "Kecepatan", "dollar", "zap"),
-    (0, 3, "Harga", "Baterai", "dollar", "cpu"),
-    (1, 2, "Range", "Kecepatan", "battery", "zap"),
-    (1, 3, "Range", "Baterai", "battery", "cpu"),
-    (2, 3, "Kecepatan", "Baterai", "zap", "cpu")
-]
-
-# Helper mapping slider pos (1-17) to Saaty Scale (1/9 to 9)
-def slider_to_ahp(pos):
-    if pos == 9:
-        return 1.0
-    elif pos < 9:
-        return float(10 - pos)
-    else:
-        return 1.0 / float(pos - 8)
-
-def get_comparison_text(left_name, right_name, pos):
-    if pos == 9:
-        return "Kedua kriteria dinilai sama penting (Equal Importance)"
-    elif pos < 9:
-        factor = int(10 - pos)
-        return f"Kriteria <b>{left_name}</b> {factor}x lebih penting dari <b>{right_name}</b>"
-    else:
-        factor = int(pos - 8)
-        return f"Kriteria <b>{right_name}</b> {factor}x lebih penting dari <b>{left_name}</b>"
-
-def auto_fix_sliders(weights_raw):
-    new_sliders = []
-    for idx, (i, j, _, _, _, _) in enumerate(PAIRS):
-        w_i = weights_raw[i]
-        w_j = weights_raw[j]
-        ratio = w_i / w_j
-        
-        # Map ratio to Saaty scale integer
-        if abs(ratio - 1.0) < 0.08:
-            pos = 9
-        elif ratio > 1.0:
-            saaty = int(round(ratio))
-            saaty = max(1, min(9, saaty))
-            pos = 10 - saaty
-        else:
-            saaty = int(round(1.0 / ratio))
-            saaty = max(1, min(9, saaty))
-            pos = saaty + 8
-        new_sliders.append(pos)
-    return new_sliders
 
 # Confetti effect integration (simulated inside Streamlit success widget)
 def trigger_confetti():
@@ -631,7 +654,7 @@ st.markdown(f"""
     </div>
     <div class="step-tabs">
         <div class="step-tab {active_1}">
-            <span class="step-num">1</span> Input Preferensi AHP
+            <span class="step-num">1</span> Input Preferensi Bobot
         </div>
         <div class="step-tab {active_2}">
             <span class="step-num">2</span> Hasil Ranking SAW
@@ -650,7 +673,7 @@ with st.sidebar:
     
     selected_stage = st.radio(
         "Pindah Tahap:",
-        ["Tahap 1: Input AHP", "Tahap 2: Hasil Ranking", "Tahap 3: Visualisasi"],
+        ["Tahap 1: Atur Bobot", "Tahap 2: Hasil Ranking", "Tahap 3: Visualisasi"],
         index=st.session_state.stage - 1
     )
     
@@ -660,7 +683,7 @@ with st.sidebar:
         if st.session_state.weights is not None:
             st.session_state.stage = 2
         else:
-            st.warning("⚠️ Selesaikan perhitungan bobot AHP terlebih dahulu!")
+            st.warning("⚠️ Selesaikan pengaturan bobot terlebih dahulu!")
     elif "Tahap 3" in selected_stage:
         if st.session_state.saw_result is not None:
             st.session_state.stage = 3
@@ -671,7 +694,7 @@ with st.sidebar:
     st.markdown("### ⚡ Detail Sistem")
     render_html(f"""
     <div style="font-size: 0.8rem; line-height: 1.6; color: #94A3B8;">
-        <b>Engine:</b> AHP Matrix + SAW Calculation<br>
+        <b>Engine:</b> SAW Calculation (Simple Additive Weighting)<br>
         <b>Database Size:</b> {len(vehicles_df)} alternatif<br>
         <b>Kriteria Evaluasi:</b><br>
         - {get_icon("dollar", 12, "#F59E0B")} Harga (Cost)<br>
@@ -714,76 +737,93 @@ if st.session_state.show_loading:
     st.rerun()
 
 # ──────────────────────────────────────────────────────────
-# STAGE 1: AHP PREFERENCE INPUT
+# STAGE 1: DIRECT WEIGHT PREFERENCE INPUT
 # ──────────────────────────────────────────────────────────
 if st.session_state.stage == 1:
     st.markdown('<div class="section-label">Langkah 1</div>', unsafe_allow_html=True)
     st.markdown('<h2>Penentuan Bobot Kriteria</h2>', unsafe_allow_html=True)
-    st.markdown('<p style="margin-bottom: 16px;">Tentukan bobot kriteria pemilihan mobil listrik menggunakan metode AHP Matrix atau secara Langsung.</p>', unsafe_allow_html=True)
+    st.markdown('<p style="margin-bottom: 24px;">Tentukan bobot kriteria pemilihan mobil listrik secara langsung sesuai preferensi Anda. Sistem akan otomatis melakukan normalisasi total bobot menjadi 100%.</p>', unsafe_allow_html=True)
 
-    # Choose weight determination method
+    # Preset selection
     st.markdown('<div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px;">', unsafe_allow_html=True)
-    weight_method = st.radio(
-        "Metode Penentuan Bobot:",
-        ["AHP Matrix (Perbandingan Berpasangan)", "Bobot Langsung (Beri Persentase Langsung)"],
-        horizontal=True,
-        key="weight_method_input"
-    )
+    cols = st.columns([1.5, 4.5])
+    with cols[0]:
+        st.markdown(f'<div style="font-size: 0.72rem; font-weight: 700; margin-top: 8px; color: #475569;">{get_icon("list", 12)} PILIH PRESET PROFIL:</div>', unsafe_allow_html=True)
+    with cols[1]:
+        preset_cols = st.columns(5)
+        preset_keys = ["equal", "price_first", "range_first", "speed_first", "balanced_ev"]
+        preset_labels = ["Sama Penting", "Harga Murah", "Jarak Tempuh", "Performa", "Kompromi EV"]
+        
+        for idx, key in enumerate(preset_keys):
+            with preset_cols[idx]:
+                if st.button(
+                    preset_labels[idx],
+                    key=f"preset_{key}",
+                    type="primary" if st.session_state.active_preset == key else "secondary",
+                    use_container_width=True
+                ):
+                    st.session_state.active_preset = key
+                    vals = PRESETS[key]
+                    st.session_state.direct_price = vals[0]
+                    st.session_state.direct_range = vals[1]
+                    st.session_state.direct_speed = vals[2]
+                    st.session_state.direct_battery = vals[3]
+                    st.rerun()
+                    
+    preset_desc = PRESET_DESCRIPTIONS.get(st.session_state.active_preset, "Kustom (Bobot disesuaikan secara manual menggunakan slider).")
+    st.markdown(f'<div style="margin-top: 10px; font-size: 0.78rem; color: #475569; font-family: monospace;">» {preset_desc}</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    if st.session_state.weight_method_input == "Bobot Langsung (Beri Persentase Langsung)":
-        # Direct weights mode
-        if "direct_price" not in st.session_state:
-            st.session_state.direct_price = 25
-        if "direct_range" not in st.session_state:
-            st.session_state.direct_range = 25
-        if "direct_speed" not in st.session_state:
-            st.session_state.direct_speed = 25
-        if "direct_battery" not in st.session_state:
-            st.session_state.direct_battery = 25
-
-        st.markdown('### 🎚️ Atur Persentase Bobot')
+    # Main Weights Sliders Layout
+    col_layout = st.columns([1.3, 0.7])
+    
+    with col_layout[0]:
+        st.markdown('### 🎚️ Atur Bobot Kriteria')
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            w_price = st.slider("Bobot Harga (%)", 0, 100, st.session_state.direct_price, 5, key="slider_price")
-        with col2:
-            w_range = st.slider("Bobot Range (%)", 0, 100, st.session_state.direct_range, 5, key="slider_range")
-        with col3:
-            w_speed = st.slider("Bobot Kecepatan (%)", 0, 100, st.session_state.direct_speed, 5, key="slider_speed")
-        with col4:
-            w_battery = st.slider("Bobot Baterai (%)", 0, 100, st.session_state.direct_battery, 5, key="slider_battery")
+        
+        w_price = st.slider("Bobot Harga (Cost) (%)", 0, 100, st.session_state.direct_price, 5, key="slider_price")
+        w_range = st.slider("Bobot Jarak Tempuh (Benefit) (%)", 0, 100, st.session_state.direct_range, 5, key="slider_range")
+        w_speed = st.slider("Bobot Kecepatan Maks (Benefit) (%)", 0, 100, st.session_state.direct_speed, 5, key="slider_speed")
+        w_battery = st.slider("Bobot Kapasitas Baterai (Benefit) (%)", 0, 100, st.session_state.direct_battery, 5, key="slider_battery")
+        
         st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Check if values changed to clear active preset if manual modification occurred
+        if (w_price != st.session_state.direct_price or 
+            w_range != st.session_state.direct_range or 
+            w_speed != st.session_state.direct_speed or 
+            w_battery != st.session_state.direct_battery):
+            st.session_state.direct_price = w_price
+            st.session_state.direct_range = w_range
+            st.session_state.direct_speed = w_speed
+            st.session_state.direct_battery = w_battery
+            st.session_state.active_preset = None
+            st.rerun()
 
-        st.session_state.direct_price = w_price
-        st.session_state.direct_range = w_range
-        st.session_state.direct_speed = w_speed
-        st.session_state.direct_battery = w_battery
+    total = w_price + w_range + w_speed + w_battery
+    if total > 0:
+        w_price_norm = w_price / total
+        w_range_norm = w_range / total
+        w_speed_norm = w_speed / total
+        w_battery_norm = w_battery / total
+        
+        st.session_state.weights = {
+            "price": w_price_norm,
+            "range": w_range_norm,
+            "top_speed": w_speed_norm,
+            "battery": w_battery_norm
+        }
+    else:
+        st.error("❌ Total bobot harus lebih besar dari 0%!")
+        st.stop()
 
-        total = w_price + w_range + w_speed + w_battery
-        if total > 0:
-            w_price_norm = w_price / total
-            w_range_norm = w_range / total
-            w_speed_norm = w_speed / total
-            w_battery_norm = w_battery / total
-            
-            st.session_state.weights = {
-                "price": w_price_norm,
-                "range": w_range_norm,
-                "top_speed": w_speed_norm,
-                "battery": w_battery_norm
-            }
-            st.session_state.cr = 0.0  # Perfectly consistent by default
-        else:
-            st.error("❌ Total bobot harus lebih besar dari 0%!")
-            st.stop()
-
-        # Display normalized weights
-        st.markdown('<div class="glass-card glass-card-green">', unsafe_allow_html=True)
-        st.markdown('<div class="section-label" style="margin-bottom: 12px;">Bobot Ternormalisasi (Total 100%)</div>', unsafe_allow_html=True)
+    with col_layout[1]:
+        st.markdown('### 📊 Preview Bobot')
+        st.markdown('<div class="glass-card glass-card-green" style="padding: 24px;">', unsafe_allow_html=True)
+        st.markdown('<div class="section-label" style="margin-bottom: 16px;">Bobot Ternormalisasi (Total 100%)</div>', unsafe_allow_html=True)
         
         c_icons = {"price": "dollar", "range": "battery", "top_speed": "zap", "battery": "cpu"}
-        c_names = {"price": "Harga", "range": "Range", "top_speed": "Kecepatan", "battery": "Baterai"}
+        c_names = {"price": "Harga (Cost)", "range": "Range (Benefit)", "top_speed": "Kecepatan (Benefit)", "battery": "Baterai (Benefit)"}
         c_colors = {"price": "#F59E0B", "range": "#00D97E", "top_speed": "#3B82F6", "battery": "#06B6D4"}
         
         for key, val in st.session_state.weights.items():
@@ -794,206 +834,56 @@ if st.session_state.stage == 1:
                 </span>
                 <span class="numeric" style="color: {c_colors[key]};">{val*100:.1f}%</span>
             </div>
-            <div style="height: 4px; background: rgba(255,255,255,0.04); margin-bottom: 12px; position: relative;">
+            <div style="height: 4px; background: rgba(255,255,255,0.04); margin-bottom: 16px; position: relative;">
                 <div style="height: 100%; background: {c_colors[key]}; width: {val*100}%; box-shadow: 0 0 6px {c_colors[key]};"></div>
             </div>
             """)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Submit controls for Direct Weights
-        st.markdown("---")
-        cols = st.columns([2.5, 7.5])
-        with cols[0]:
-            if st.button("🚀 Hitung SAW & Lihat Hasil", type="primary", use_container_width=True, key="submit_direct_btn"):
-                trigger_confetti()
-                st.session_state.show_loading = True
-                st.rerun()
-        with cols[1]:
-            render_html(f"""
-            <div style="font-size: 0.72rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-top: 10px; font-weight: 700; text-transform: uppercase;">
-                {get_icon("help", 12, "#475569")} Bobot langsung digunakan. Siap melanjutkan ke analisis pemeringkatan SAW.
-            </div>
-            """)
+    # Workflow Guidance Panel (Cara Kerja SPK SAW)
+    render_html(f"""
+    <div class="glass-card glass-card-blue" style="margin-top: 24px; border-left: 4px solid var(--blue); padding: 24px;">
+        <div class="section-label" style="color: var(--blue); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+            {get_icon("help", 14, "#3B82F6")} PANDUAN CARA KERJA SISTEM (METODE SAW)
+        </div>
+        <h4 style="margin-top: 0; margin-bottom: 15px; color: #F1F5F9; font-size: 0.92rem; letter-spacing: 0.05em;">Bagaimana Mobil Listrik Terbaik Dipilih Secara Ilmiah?</h4>
+        <div style="font-size: 0.82rem; color: #94A3B8; line-height: 1.6;">
+            <ol style="margin: 0; padding-left: 20px; color: #94A3B8;">
+                <li style="margin-bottom: 12px;">
+                    <strong style="color: #F1F5F9;">Penentuan Bobot Awal:</strong> Nilai persentase yang Anda atur pada slider di atas akan dijumlahkan dan dibagi total untuk menghasilkan bobot ternormalisasi yang berjumlah tepat 100% (nilai bobot $W = [w_1, w_2, w_3, w_4]$).
+                </li>
+                <li style="margin-bottom: 12px;">
+                    <strong style="color: #F1F5F9;">Normalisasi Kriteria (Simple Additive Weighting):</strong> Setiap alternatif mobil listrik akan dihitung nilai normalisasinya ($R$):
+                    <ul style="margin-top: 6px; padding-left: 20px;">
+                        <li style="margin-bottom: 4px;">Kriteria <span style="color: #F59E0B; font-weight: 700;">Harga (Cost)</span>: Dihitung dengan rumus $R_{{ij}} = \frac{{Min(X_j)}}{{X_{{ij}}}}$ (semakin murah harga mobil listrik, semakin tinggi skor normalisasinya).</li>
+                        <li>Kriteria <span style="color: #00D97E; font-weight: 700;">Range, Kecepatan, dan Baterai (Benefit)</span>: Dihitung dengan rumus $R_{{ij}} = \frac{{X_{{ij}}}}{{Max(X_j)}}$ (semakin tinggi spesifikasi mobil listrik, semakin tinggi skor normalisasinya).</li>
+                    </ul>
+                </li>
+                <li style="margin-bottom: 12px;">
+                    <strong style="color: #F1F5F9;">Perhitungan Nilai Preferensi ($V_i$):</strong> Mengalikan baris bobot ternormalisasi dengan baris nilai hasil normalisasi alternatif mobil listrik: $V_i = \\sum_{{j=1}}^{{n}} w_j \\cdot R_{{ij}}$.
+                </li>
+                <li>
+                    <strong style="color: #F1F5F9;">Pemeringkatan:</strong> Nilai preferensi akhir ($V_i$) yang berkisar antara 0 hingga 1 diurutkan dari yang terbesar untuk menyajikan rekomendasi mobil listrik terbaik.
+                </li>
+            </ol>
+        </div>
+    </div>
+    """)
 
-    else:
-        # AHP Matrix Mode
-        # Expandable Guide Panel
-        with st.expander(f"❔ Panduan Penggunaan Skala AHP", expanded=True):
-            render_html(f"""
-            <div style="font-size: 0.85rem; line-height: 1.6; color: #94A3B8;">
-                <ul>
-                    <li>Geser ke <b>KIRI</b> untuk memprioritaskan kriteria sebelah kiri.</li>
-                    <li>Geser ke <b>KANAN</b> untuk memprioritaskan kriteria sebelah kanan.</li>
-                    <li>Posisikan di <b>TENGAH (Nilai 9)</b> jika kedua kriteria sama penting (Bobot 1:1).</li>
-                    <li>Semakin jauh dari tengah, kriteria terpilih dinilai semakin penting (Skala Saaty 2 hingga 9).</li>
-                </ul>
-            </div>
-            """)
-
-        # Preset selection
-        st.markdown('<div class="glass-card" style="padding: 16px 20px;">', unsafe_allow_html=True)
-        cols = st.columns([1.5, 4.5])
-        with cols[0]:
-            st.markdown(f'<div style="font-size: 0.72rem; font-weight: 700; margin-top: 8px; color: #475569;">{get_icon("list", 12)} PILIH PRESET PROFIL:</div>', unsafe_allow_html=True)
-        with cols[1]:
-            preset_cols = st.columns(5)
-            preset_keys = ["equal", "price_first", "range_first", "speed_first", "balanced_ev"]
-            preset_labels = ["Sama Penting", "Harga Murah", "Jarak Tempuh", "Performa", "Kompromi EV"]
-            
-            for idx, key in enumerate(preset_keys):
-                with preset_cols[idx]:
-                    if st.button(
-                        preset_labels[idx],
-                        key=f"preset_{key}",
-                        type="primary" if st.session_state.active_preset == key else "secondary",
-                        use_container_width=True
-                    ):
-                        st.session_state.active_preset = key
-                        st.session_state.sliders = PRESETS[key]
-                        st.rerun()
-                        
-        preset_desc = PRESET_DESCRIPTIONS.get(st.session_state.active_preset, "Kustom (Matriks perbandingan disesuaikan secara manual).")
-        st.markdown(f'<div style="margin-top: 10px; font-size: 0.78rem; color: #475569; font-family: monospace;">» {preset_desc}</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        # Calculate weights and consistency in real time
-        ahp_calc = AHPCalculator()
-        matrix = np.ones((4, 4))
-        
-        col_layout = st.columns([1.3, 0.7])
-        
-        with col_layout[0]:
-            st.markdown('### 🎚️ Atur Perbandingan Kriteria')
-            
-            sliders = st.session_state.sliders.copy()
-            
-            for idx, (i, j, left_name, right_name, icon_l, icon_r) in enumerate(PAIRS):
-                text_color = "var(--green)" if sliders[idx] < 9 else ("var(--blue)" if sliders[idx] > 9 else "var(--text-muted)")
-                render_html(f"""
-                <div style="display: flex; justify-content: space-between; margin-top: 12px; margin-bottom: 2px;">
-                    <span style="font-weight: 700; color: #F1F5F9; font-size: 0.85rem;">{get_icon(icon_l, 14, "#00D97E")} {left_name}</span>
-                    <span style="font-weight: 700; color: #F1F5F9; font-size: 0.85rem;">{right_name} {get_icon(icon_r, 14, "#3B82F6")}</span>
-                </div>
-                <div style="font-size: 0.8rem; color: {text_color}; margin-bottom: 6px;">
-                    {get_comparison_text(left_name, right_name, sliders[idx])}
-                </div>
-                """)
-                
-                val = st.slider(
-                    f"slider_widget_{idx}",
-                    min_value=1,
-                    max_value=17,
-                    value=sliders[idx],
-                    step=1,
-                    key=f"widget_{idx}",
-                    label_visibility="collapsed"
-                )
-                
-                if val != sliders[idx]:
-                    st.session_state.sliders[idx] = val
-                    st.session_state.active_preset = None
-                    st.rerun()
-
-        # Build AHP matrix from sliders
-        for idx, (i, j, _, _, _, _) in enumerate(PAIRS):
-            val = slider_to_ahp(st.session_state.sliders[idx])
-            matrix[i, j] = val
-            matrix[j, i] = round(1.0 / val, 6)
-
-        # Compute AHP weights
-        weights_raw, cr, lambda_max, status = ahp_calc.calculate(matrix)
-        weights = None
-        if weights_raw is not None:
-            weights = {
-                "price": weights_raw[0],
-                "range": weights_raw[1],
-                "top_speed": weights_raw[2],
-                "battery": weights_raw[3]
-            }
-        is_consistent = cr <= 0.10 if cr is not None else False
-        st.session_state.weights = weights
-        st.session_state.cr = cr
-
-        with col_layout[1]:
-            st.markdown('### 🔍 Validasi Matriks')
-            
-            box_border_color = "var(--green)" if is_consistent else "var(--red)"
-            box_bg_color = "rgba(0, 217, 126, 0.02)" if is_consistent else "rgba(239, 68, 68, 0.02)"
-            box_text_color = "var(--green)" if is_consistent else "var(--red)"
-            box_icon = get_icon("zap", 16, "#00D97E") if is_consistent else get_icon("help", 16, "#EF4444")
-            
-            status_title = "Logika Pilihan: Konsisten (Valid)" if is_consistent else "Logika Pilihan: Ada Kontradiksi"
-            status_desc = ("Preferensi pilihan Anda sudah logis dan selaras secara matematis. "
-                           "Bobot ini valid untuk digunakan dalam pemeringkatan.") if is_consistent else (
-                           "Terdapat kontradiksi nilai (misal: A > B, B > C, tetapi C > A). "
-                           "Gunakan tombol Auto-Fix di bawah untuk memperbaikinya secara otomatis.")
-                           
-            render_html(f"""
-            <div class="glass-card" style="border-left: 4px solid {box_border_color}; background: {box_bg_color}; padding: 18px; margin-bottom: 15px;">
-                <div style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: {box_text_color}; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                    {box_icon} {status_title}
-                </div>
-                <div style="font-size: 0.72rem; color: #475569; margin-bottom: 10px; font-family: monospace;">
-                    Consistency Ratio (CR): <strong style="color: {box_text_color}; font-size: 0.85rem;">{cr*100:.1f}%</strong> (Batas: 10.0%)
-                </div>
-                <p style="margin: 0; font-size: 0.78rem; color: #94A3B8; line-height: 1.4;">
-                    {status_desc}
-                </p>
-            </div>
-            """)
-            
-            # Auto-Fix Button (Solves usability problem)
-            if not is_consistent and weights_raw is not None:
-                if st.button("✨ Otomatis Perbaiki (Auto-Fix)", type="primary", use_container_width=True, key="autofix_btn"):
-                    new_sliders = auto_fix_sliders(weights_raw)
-                    st.session_state.sliders = new_sliders
-                    st.session_state.active_preset = None
-                    st.rerun()
-            
-            # Real-time Weight Preview Panel
-            if is_consistent and weights is not None:
-                st.markdown('<div class="glass-card glass-card-green">', unsafe_allow_html=True)
-                st.markdown('<div class="section-label" style="margin-bottom: 12px;">Bobot Hasil AHP</div>', unsafe_allow_html=True)
-                
-                c_icons = {"price": "dollar", "range": "battery", "top_speed": "zap", "battery": "cpu"}
-                c_names = {"price": "Harga", "range": "Range", "top_speed": "Kecepatan", "battery": "Baterai"}
-                c_colors = {"price": "#F59E0B", "range": "#00D97E", "top_speed": "#3B82F6", "battery": "#06B6D4"}
-                
-                for key, val in weights.items():
-                    render_html(f"""
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; align-items: center;">
-                        <span style="font-weight: 700; color: #F1F5F9; display: flex; align-items: center; gap: 4px;">
-                            {get_icon(c_icons[key], 12, c_colors[key])} {c_names[key]}
-                        </span>
-                        <span class="numeric" style="color: {c_colors[key]};">{val*100:.1f}%</span>
-                    </div>
-                    <div style="height: 4px; background: rgba(255,255,255,0.04); margin-bottom: 12px; position: relative;">
-                        <div style="height: 100%; background: {c_colors[key]}; width: {val*100}%; box-shadow: 0 0 6px {c_colors[key]};"></div>
-                    </div>
-                    """)
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-        # Submit controls
-        st.markdown("---")
-        if is_consistent:
-            cols = st.columns([2.5, 7.5])
-            with cols[0]:
-                if st.button("🚀 Hitung SAW & Lihat Hasil", type="primary", use_container_width=True, key="submit_ahp"):
-                    trigger_confetti()
-                    st.session_state.show_loading = True
-                    st.rerun()
-            with cols[1]:
-                render_html(f"""
-                <div style="font-size: 0.72rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-top: 10px; font-weight: 700; text-transform: uppercase;">
-                    {get_icon("help", 12, "#475569")} Nilai CR Konsisten. Siap melanjutkan ke analisis pemeringkatan SAW.
-                </div>
-                """)
-        else:
-            render_html(f"""
-            <div style="font-size: 0.80rem; color: #EF4444; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
-                {get_icon("help", 14, "#EF4444")} Perhitungan terkunci. Silakan gunakan tombol "Auto-Fix" di atas untuk memperbaiki logika secara otomatis.
-            </div>
-            """)
+    # Submit controls
+    st.markdown("---")
+    cols = st.columns([2.5, 7.5])
+    with cols[0]:
+        if st.button("🚀 Hitung SAW & Lihat Hasil", type="primary", use_container_width=True, key="submit_direct_weights"):
+            trigger_confetti()
+            st.session_state.show_loading = True
+            st.rerun()
+    with cols[1]:
+        render_html(f"""
+        <div style="font-size: 0.72rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-top: 10px; font-weight: 700; text-transform: uppercase;">
+            {get_icon("zap", 12, "#475569")} Bobot preferensi tersimpan. Tekan tombol untuk mengalkulasi rekomendasi mobil listrik terbaik Anda.
+        </div>
+        """)
 
 # ──────────────────────────────────────────────────────────
 # STAGE 2: SAW RESULTS TABLE
@@ -1235,9 +1125,11 @@ elif st.session_state.stage == 3:
         if st.button("🔄 Mulai Dari Awal", type="primary", use_container_width=True):
             st.session_state.stage = 1
             st.session_state.weights = None
-            st.session_state.cr = None
             st.session_state.saw_result = None
-            st.session_state.sliders = [9, 9, 9, 9, 9, 9]
+            st.session_state.direct_price = 25
+            st.session_state.direct_range = 25
+            st.session_state.direct_speed = 25
+            st.session_state.direct_battery = 25
             st.session_state.active_preset = "equal"
             st.rerun()
 
@@ -1247,6 +1139,6 @@ elif st.session_state.stage == 3:
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #475569; font-size: 11px; margin-top: 20px; font-weight: 700; text-transform: uppercase;'>
-    SPK Pemilihan Mobil Listrik | Metode AHP + SAW | Developed with Streamlit & Plotly
+    SPK Pemilihan Mobil Listrik | Metode SAW | Developed with Streamlit & Plotly
 </div>
-""", unsafe_allow_html=True)
+""")
