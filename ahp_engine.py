@@ -27,7 +27,8 @@ class AHPCalculator:
     
     def calculate_lambda_max(self, matrix, weights):
         """Hitung nilai eigen maksimum (λmax)"""
-        consistency_vector = matrix.sum(axis=1) / weights
+        aw = np.dot(matrix, weights)
+        consistency_vector = aw / weights
         lambda_max = consistency_vector.mean()
         return lambda_max
     

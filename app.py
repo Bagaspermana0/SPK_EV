@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from saw_engine import SAWCalculator
+from ahp_engine import AHPCalculator
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
@@ -10,7 +11,6 @@ import time
 # Page config
 st.set_page_config(
     page_title="SPK Pemilihan Mobil Listrik",
-    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -26,7 +26,12 @@ def get_icon(icon_name, size=16, color="currentColor"):
         "rotate": f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',
         "chart": f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>',
         "list": f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>',
-        "help": f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>'
+        "help": f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+        "sliders": f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>',
+        "search": f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+        "award": f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>',
+        "trending-up": f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+        "target": f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 24 24" fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>'
     }
     return icons.get(icon_name, "")
 
@@ -488,65 +493,6 @@ st.markdown(f"""
       100% {{ transform: scale(1.2); opacity: 1; }}
     }}
 
-    /* Sidebar Navigation radio options container override */
-    div[data-testid="stSidebar"] div[role="radiogroup"] {{
-      background: transparent !important;
-      border: none !important;
-      padding: 0 !important;
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 10px !important;
-    }}
-
-    div[data-testid="stSidebar"] div[role="radiogroup"] label {{
-      background: rgba(255, 255, 255, 0.02) !important;
-      border: 1px solid rgba(255, 255, 255, 0.07) !important;
-      padding: 12px 16px !important;
-      border-radius: 0px !important;
-      color: #94A3B8 !important;
-      font-size: 0.8rem !important;
-      font-weight: 700 !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.08em !important;
-      cursor: pointer !important;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%) !important;
-      display: flex !important;
-      align-items: center !important;
-      gap: 10px !important;
-      margin: 0 !important;
-    }}
-
-    div[data-testid="stSidebar"] div[role="radiogroup"] label:hover {{
-      background: rgba(0, 217, 126, 0.03) !important;
-      border-color: rgba(0, 217, 126, 0.3) !important;
-      color: #00D97E !important;
-      padding-left: 20px !important;
-    }}
-
-    /* Style the selected radio item using :has selector */
-    div[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked),
-    div[data-testid="stSidebar"] div[role="radiogroup"] label:has(input[checked]),
-    div[data-testid="stSidebar"] div[role="radiogroup"] label[data-checked="true"] {{
-      background: rgba(0, 217, 126, 0.08) !important;
-      border-color: #00D97E !important;
-      color: #00D97E !important;
-      box-shadow: 0 0 15px rgba(0, 217, 126, 0.1) !important;
-      border-left: 3px solid #00D97E !important;
-    }}
-
-    /* Hide the default radio circle icon completely */
-    div[data-testid="stSidebar"] div[role="radiogroup"] label div[role="presentation"] {{
-      display: none !important;
-    }}
-
-    /* Hide the radio text wrap helper */
-    div[data-testid="stSidebar"] div[role="radiogroup"] label div[data-testid="stMarkdownContainer"] p {{
-      margin: 0 !important;
-      font-weight: 700 !important;
-      font-family: 'Segoe UI', Arial, sans-serif !important;
-    }}
-
     /* Adjust sidebar labels */
     div[data-testid="stSidebar"] div[data-testid="stWidgetLabel"] p {{
       font-size: 0.72rem !important;
@@ -555,6 +501,21 @@ st.markdown(f"""
       color: #475569 !important;
       font-weight: 800 !important;
       margin-bottom: 8px !important;
+    }}
+
+    /* Sidebar primary button override (Black theme) */
+    div[data-testid="stSidebar"] div.stButton > button[kind="primary"] {{
+      background: #000000 !important;
+      color: #FFFFFF !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    }}
+    div[data-testid="stSidebar"] div.stButton > button[kind="primary"]:hover {{
+      background: #111111 !important;
+      color: #FFFFFF !important;
+      border-color: rgba(255, 255, 255, 0.4) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+      transform: translateY(-1px) !important;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -566,36 +527,65 @@ if "stage" not in st.session_state:
     st.session_state.saw_result = None
     st.session_state.show_loading = False
 
-# Direct Weights session state (Harga, Range, Kecepatan, Baterai)
-if "direct_price" not in st.session_state:
-    st.session_state.direct_price = 25
-if "direct_range" not in st.session_state:
-    st.session_state.direct_range = 25
-if "direct_speed" not in st.session_state:
-    st.session_state.direct_speed = 25
-if "direct_battery" not in st.session_state:
-    st.session_state.direct_battery = 25
-
 # Preset selector state
 if "active_preset" not in st.session_state:
     st.session_state.active_preset = "equal"
 
-# Preset Profiles Mapping (Direct Weights percentage allocations)
+# Preset Profiles Mapping for Guided AHP (3 sliders: ahp_s1, ahp_s2, ahp_s3)
 PRESETS = {
-    "equal": [25, 25, 25, 25],
-    "price_first": [50, 20, 15, 15],
-    "range_first": [20, 50, 15, 15],
-    "speed_first": [20, 15, 50, 15],
-    "balanced_ev": [30, 30, 20, 20],
+    "equal": [0, 0, 0],
+    "price_first": [-4, 0, 0],
+    "range_first": [4, -4, 0],
+    "speed_first": [0, 4, -4],
+    "balanced_ev": [-1, 0, 0],
 }
 
 PRESET_DESCRIPTIONS = {
-    "equal": "Semua kriteria memiliki bobot kepentingan sama (25%).",
-    "price_first": "Prioritas utama pada aspek anggaran/harga murah (Harga: 50%).",
-    "range_first": "Prioritas pada efisiensi daya dan jarak tempuh terjauh (Range: 50%).",
-    "speed_first": "Prioritas pada tenaga mesin dan kecepatan tinggi (Kecepatan: 50%).",
-    "balanced_ev": "Kompromi optimal antara efisiensi, performa, dan harga.",
+    "equal": "Semua kriteria memiliki bobot kepentingan sama (25.0%).",
+    "price_first": "Prioritas utama pada aspek anggaran/harga murah (Harga: 62.5%, lainnya: 12.5%).",
+    "range_first": "Prioritas pada efisiensi daya dan jarak tempuh terjauh (Range: 62.5%, lainnya: 12.5%).",
+    "speed_first": "Prioritas pada tenaga mesin dan kecepatan tinggi (Kecepatan: 62.5%, lainnya: 12.5%).",
+    "balanced_ev": "Kompromi optimal dengan mengutamakan sedikit aspek harga (Harga: 40.0%, lainnya: 20.0%).",
 }
+
+# Guided AHP sliders session state
+if "ahp_s1" not in st.session_state:
+    st.session_state.ahp_s1 = 0
+if "ahp_s2" not in st.session_state:
+    st.session_state.ahp_s2 = 0
+if "ahp_s3" not in st.session_state:
+    st.session_state.ahp_s3 = 0
+
+def map_slider_to_ahp(val):
+    if val < 0:
+        return abs(val) + 1
+    elif val > 0:
+        return 1 / (val + 1)
+    else:
+        return 1.0
+
+def build_guided_matrix(v1, v2, v3):
+    matrix = np.ones((4, 4))
+    
+    matrix[0, 1] = map_slider_to_ahp(v1)
+    matrix[1, 0] = 1 / matrix[0, 1]
+    
+    matrix[1, 2] = map_slider_to_ahp(v2)
+    matrix[2, 1] = 1 / matrix[1, 2]
+    
+    matrix[2, 3] = map_slider_to_ahp(v3)
+    matrix[3, 2] = 1 / matrix[2, 3]
+    
+    matrix[0, 2] = matrix[0, 1] * matrix[1, 2]
+    matrix[2, 0] = 1 / matrix[0, 2]
+    
+    matrix[1, 3] = matrix[1, 2] * matrix[2, 3]
+    matrix[3, 1] = 1 / matrix[1, 3]
+    
+    matrix[0, 3] = matrix[0, 2] * matrix[2, 3]
+    matrix[3, 0] = 1 / matrix[0, 3]
+    
+    return matrix
 
 # Confetti effect integration (simulated inside Streamlit success widget)
 def trigger_confetti():
@@ -668,30 +658,42 @@ st.markdown(f"""
 
 # Sidebar - Preset and Info
 with st.sidebar:
-    st.markdown("### 📋 Navigasi Cepat")
-    st.markdown("---")
+    st.markdown("### Navigasi Cepat")
     
-    selected_stage = st.radio(
-        "Pindah Tahap:",
-        ["Tahap 1: Atur Bobot", "Tahap 2: Hasil Ranking", "Tahap 3: Visualisasi"],
-        index=st.session_state.stage - 1
-    )
-    
-    if "Tahap 1" in selected_stage:
+    st.markdown('<div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">', unsafe_allow_html=True)
+    if st.button("Tahap 1: Atur Bobot (AHP)", type="secondary" if st.session_state.stage != 1 else "primary", use_container_width=True):
         st.session_state.stage = 1
-    elif "Tahap 2" in selected_stage:
+        st.rerun()
+    
+    if st.button("Tahap 2: Hasil Ranking (SAW)", type="secondary" if st.session_state.stage != 2 else "primary", use_container_width=True):
         if st.session_state.weights is not None:
             st.session_state.stage = 2
+            st.rerun()
         else:
-            st.warning("⚠️ Selesaikan pengaturan bobot terlebih dahulu!")
-    elif "Tahap 3" in selected_stage:
+            st.warning("Selesaikan pengaturan bobot terlebih dahulu!")
+            
+    if st.button("Tahap 3: Visualisasi", type="secondary" if st.session_state.stage != 3 else "primary", use_container_width=True):
         if st.session_state.saw_result is not None:
             st.session_state.stage = 3
+            st.rerun()
         else:
-            st.warning("⚠️ Jalankan SAW terlebih dahulu!")
+            st.warning("Jalankan SAW terlebih dahulu!")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown("### ⚡ Detail Sistem")
+    with st.expander("Panduan & Cara Kerja", expanded=False):
+        st.markdown("""
+        <div style="font-size: 0.8rem; color: #94A3B8; line-height: 1.5;">
+            <strong>Sistem Pendukung Keputusan (SPK) Mobil Listrik</strong> ini menggunakan 2 metode:<br><br>
+            <strong>1. AHP Terpandu</strong><br>
+            Menentukan <strong>Bobot Prioritas</strong> kriteria. Anda cukup membandingkan 3 pasang kriteria utama, lalu sistem menghitung sisanya secara otomatis agar logika perbandingan Anda 100% konsisten (CR = 0%).<br><br>
+            <strong>2. SAW</strong><br>
+            Melakukan <strong>Perankingan</strong>. Menormalisasi database mobil listrik dan mengalikannya dengan bobot AHP Anda untuk mendapatkan Skor Akhir terbaik.
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### Detail Sistem")
     render_html(f"""
     <div style="font-size: 0.8rem; line-height: 1.6; color: #94A3B8;">
         <b>Engine:</b> SAW Calculation (Simple Additive Weighting)<br>
@@ -737,144 +739,134 @@ if st.session_state.show_loading:
     st.rerun()
 
 # ──────────────────────────────────────────────────────────
-# STAGE 1: DIRECT WEIGHT PREFERENCE INPUT
+# STAGE 1: GUIDED AHP INPUT
 # ──────────────────────────────────────────────────────────
 if st.session_state.stage == 1:
     st.markdown('<div class="section-label">Langkah 1</div>', unsafe_allow_html=True)
-    st.markdown('<h2>Penentuan Bobot Kriteria</h2>', unsafe_allow_html=True)
-    st.markdown('<p style="margin-bottom: 24px;">Tentukan bobot kriteria pemilihan mobil listrik secara langsung sesuai preferensi Anda. Sistem akan otomatis melakukan normalisasi total bobot menjadi 100%.</p>', unsafe_allow_html=True)
+    st.markdown('<h2>AHP Terpandu (Guided AHP)</h2>', unsafe_allow_html=True)
+    st.markdown('<p style="margin-bottom: 24px;">Bandingkan kepentingan kriteria di bawah ini secara berpasangan. Sistem AHP Terpandu kami akan otomatis menghitung 3 perbandingan sisanya untuk memastikan logika Anda 100% konsisten sempurna secara matematis (CR = 0.0%).</p>', unsafe_allow_html=True)
 
-    # Preset selection
-    st.markdown('<div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px;">', unsafe_allow_html=True)
-    cols = st.columns([1.5, 4.5])
-    with cols[0]:
-        st.markdown(f'<div style="font-size: 0.72rem; font-weight: 700; margin-top: 8px; color: #475569;">{get_icon("list", 12)} PILIH PRESET PROFIL:</div>', unsafe_allow_html=True)
-    with cols[1]:
-        preset_cols = st.columns(5)
-        preset_keys = ["equal", "price_first", "range_first", "speed_first", "balanced_ev"]
-        preset_labels = ["Sama Penting", "Harga Murah", "Jarak Tempuh", "Performa", "Kompromi EV"]
-        
-        for idx, key in enumerate(preset_keys):
-            with preset_cols[idx]:
-                if st.button(
-                    preset_labels[idx],
-                    key=f"preset_{key}",
-                    type="primary" if st.session_state.active_preset == key else "secondary",
-                    use_container_width=True
-                ):
-                    st.session_state.active_preset = key
-                    vals = PRESETS[key]
-                    st.session_state.direct_price = vals[0]
-                    st.session_state.direct_range = vals[1]
-                    st.session_state.direct_speed = vals[2]
-                    st.session_state.direct_battery = vals[3]
-                    st.rerun()
-                    
-    preset_desc = PRESET_DESCRIPTIONS.get(st.session_state.active_preset, "Kustom (Bobot disesuaikan secara manual menggunakan slider).")
-    st.markdown(f'<div style="margin-top: 10px; font-size: 0.78rem; color: #475569; font-family: monospace;">» {preset_desc}</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Preset Profil Selector
+    st.markdown(f'<div style="font-size: 0.72rem; font-weight: 700; margin-top: 8px; color: #475569; text-transform: uppercase;">{get_icon("list", 12, "#475569")}&nbsp; PILIH PRESET PROFIL:</div>', unsafe_allow_html=True)
+    preset_cols = st.columns(5)
+    preset_keys = ["equal", "price_first", "range_first", "speed_first", "balanced_ev"]
+    preset_labels = ["Sama Penting", "Harga Murah", "Jarak Tempuh", "Performa", "Kompromi EV"]
+    for idx, key in enumerate(preset_keys):
+        with preset_cols[idx]:
+            if st.button(
+                preset_labels[idx],
+                key=f"preset_{key}",
+                type="primary" if st.session_state.active_preset == key else "secondary",
+                use_container_width=True
+            ):
+                st.session_state.active_preset = key
+                st.session_state.ahp_s1 = PRESETS[key][0]
+                st.session_state.ahp_s2 = PRESETS[key][1]
+                st.session_state.ahp_s3 = PRESETS[key][2]
+                st.rerun()
+                
+    preset_desc = PRESET_DESCRIPTIONS.get(st.session_state.active_preset, "Kustom (Matriks perbandingan disesuaikan secara manual).")
+    st.markdown(f'<div style="margin-top: 10px; margin-bottom: 25px; font-size: 0.78rem; color: #475569; font-family: monospace;">» {preset_desc}</div>', unsafe_allow_html=True)
 
-    # Main Weights Sliders Layout
     col_layout = st.columns([1.3, 0.7])
     
     with col_layout[0]:
-        st.markdown('### 🎚️ Atur Bobot Kriteria')
+        st.markdown(f'<h3>{get_icon("sliders", 18, "#F1F5F9")}&nbsp; Perbandingan Pasangan Kriteria Utama</h3>', unsafe_allow_html=True)
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         
-        w_price = st.slider("Bobot Harga (Cost) (%)", 0, 100, st.session_state.direct_price, 5, key="slider_price")
-        w_range = st.slider("Bobot Jarak Tempuh (Benefit) (%)", 0, 100, st.session_state.direct_range, 5, key="slider_range")
-        w_speed = st.slider("Bobot Kecepatan Maks (Benefit) (%)", 0, 100, st.session_state.direct_speed, 5, key="slider_speed")
-        w_battery = st.slider("Bobot Kapasitas Baterai (Benefit) (%)", 0, 100, st.session_state.direct_battery, 5, key="slider_battery")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Check if values changed to clear active preset if manual modification occurred
-        if (w_price != st.session_state.direct_price or 
-            w_range != st.session_state.direct_range or 
-            w_speed != st.session_state.direct_speed or 
-            w_battery != st.session_state.direct_battery):
-            st.session_state.direct_price = w_price
-            st.session_state.direct_range = w_range
-            st.session_state.direct_speed = w_speed
-            st.session_state.direct_battery = w_battery
-            st.session_state.active_preset = None
+        def format_slider_label(val, left_label, right_label):
+            if val < 0:
+                return f"{left_label} {abs(val) + 1}x lebih penting dari {right_label}"
+            elif val > 0:
+                return f"{right_label} {val + 1}x lebih penting dari {left_label}"
+            else:
+                return f"{left_label} & {right_label} sama penting"
+                
+        # Slider 1
+        st.markdown(f'<div style="font-weight: 700; color: #F59E0B;">{get_icon("dollar", 14)} Harga vs {get_icon("battery", 14)} Range</div>', unsafe_allow_html=True)
+        v1 = st.slider("Harga vs Range", -8, 8, st.session_state.ahp_s1, 1, key="slider_1", label_visibility="collapsed")
+        st.markdown(f'<div style="font-size: 0.75rem; color: #94A3B8; text-align: center; margin-bottom: 20px;">{format_slider_label(v1, "Harga", "Range")}</div>', unsafe_allow_html=True)
+
+        # Slider 2
+        st.markdown(f'<div style="font-weight: 700; color: #00D97E;">{get_icon("battery", 14)} Range vs {get_icon("zap", 14)} Kecepatan</div>', unsafe_allow_html=True)
+        v2 = st.slider("Range vs Kecepatan", -8, 8, st.session_state.ahp_s2, 1, key="slider_2", label_visibility="collapsed")
+        st.markdown(f'<div style="font-size: 0.75rem; color: #94A3B8; text-align: center; margin-bottom: 20px;">{format_slider_label(v2, "Range", "Kecepatan")}</div>', unsafe_allow_html=True)
+
+        # Slider 3
+        st.markdown(f'<div style="font-weight: 700; color: #3B82F6;">{get_icon("zap", 14)} Kecepatan vs {get_icon("cpu", 14)} Baterai</div>', unsafe_allow_html=True)
+        v3 = st.slider("Kecepatan vs Baterai", -8, 8, st.session_state.ahp_s3, 1, key="slider_3", label_visibility="collapsed")
+        st.markdown(f'<div style="font-size: 0.75rem; color: #94A3B8; text-align: center;">{format_slider_label(v3, "Kecepatan", "Baterai")}</div>', unsafe_allow_html=True)
+
+        # Detect manual slider movement
+        if (v1 != st.session_state.ahp_s1) or (v2 != st.session_state.ahp_s2) or (v3 != st.session_state.ahp_s3):
+            st.session_state.ahp_s1 = v1
+            st.session_state.ahp_s2 = v2
+            st.session_state.ahp_s3 = v3
+            st.session_state.active_preset = "custom"
             st.rerun()
 
-    total = w_price + w_range + w_speed + w_battery
-    if total > 0:
-        w_price_norm = w_price / total
-        w_range_norm = w_range / total
-        w_speed_norm = w_speed / total
-        w_battery_norm = w_battery / total
-        
-        st.session_state.weights = {
-            "price": w_price_norm,
-            "range": w_range_norm,
-            "top_speed": w_speed_norm,
-            "battery": w_battery_norm
-        }
-    else:
-        st.error("❌ Total bobot harus lebih besar dari 0%!")
-        st.stop()
-
-    with col_layout[1]:
-        st.markdown('### 📊 Preview Bobot')
-        st.markdown('<div class="glass-card glass-card-green" style="padding: 24px;">', unsafe_allow_html=True)
-        st.markdown('<div class="section-label" style="margin-bottom: 16px;">Bobot Ternormalisasi (Total 100%)</div>', unsafe_allow_html=True)
-        
-        c_icons = {"price": "dollar", "range": "battery", "top_speed": "zap", "battery": "cpu"}
-        c_names = {"price": "Harga (Cost)", "range": "Range (Benefit)", "top_speed": "Kecepatan (Benefit)", "battery": "Baterai (Benefit)"}
-        c_colors = {"price": "#F59E0B", "range": "#00D97E", "top_speed": "#3B82F6", "battery": "#06B6D4"}
-        
-        for key, val in st.session_state.weights.items():
-            render_html(f"""
-            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; align-items: center;">
-                <span style="font-weight: 700; color: #F1F5F9; display: flex; align-items: center; gap: 4px;">
-                    {get_icon(c_icons[key], 12, c_colors[key])} {c_names[key]}
-                </span>
-                <span class="numeric" style="color: {c_colors[key]};">{val*100:.1f}%</span>
-            </div>
-            <div style="height: 4px; background: rgba(255,255,255,0.04); margin-bottom: 16px; position: relative;">
-                <div style="height: 100%; background: {c_colors[key]}; width: {val*100}%; box-shadow: 0 0 6px {c_colors[key]};"></div>
-            </div>
-            """)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Workflow Guidance Panel (Cara Kerja SPK SAW)
-    render_html(f"""
-    <div class="glass-card glass-card-blue" style="margin-top: 24px; border-left: 4px solid var(--blue); padding: 24px;">
-        <div class="section-label" style="color: var(--blue); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-            {get_icon("help", 14, "#3B82F6")} PANDUAN CARA KERJA SISTEM (METODE SAW)
+    with col_layout[1]:
+        st.markdown(f'<h3>{get_icon("list", 18, "#F1F5F9")}&nbsp; Validasi Matriks</h3>', unsafe_allow_html=True)
+        
+        # Calculate AHP Matrix and Weights
+        matrix = build_guided_matrix(v1, v2, v3)
+        ahp = AHPCalculator()
+        weights_arr, cr, lambda_max, msg = ahp.calculate(matrix)
+        
+        if weights_arr is not None:
+            weights_dict = {
+                'price': weights_arr[0],
+                'range': weights_arr[1],
+                'top_speed': weights_arr[2],
+                'battery': weights_arr[3]
+            }
+            st.session_state.weights = weights_dict
+        else:
+            weights_dict = None
+            
+        render_html(f"""
+        <div class="glass-card" style="border-left: 4px solid var(--green); background: rgba(0, 217, 126, 0.02); padding: 18px; margin-bottom: 15px;">
+            <div style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--green); display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                {get_icon("zap", 16, "#00D97E")} Logika Konsisten
+            </div>
+            <div style="font-size: 0.72rem; color: #475569; margin-bottom: 10px; font-family: monospace;">
+                Consistency Ratio (CR): <strong style="color: var(--green); font-size: 0.85rem;">0.0%</strong> (Batas: 10.0%)
+            </div>
+            <p style="margin: 0; font-size: 0.78rem; color: #94A3B8; line-height: 1.4;">
+                Dengan sistem Guided AHP (Spanning Tree), nilai CR selalu terkunci di 0%. Bebas dari error kontradiksi matematis.
+            </p>
         </div>
-        <h4 style="margin-top: 0; margin-bottom: 15px; color: #F1F5F9; font-size: 0.92rem; letter-spacing: 0.05em;">Bagaimana Mobil Listrik Terbaik Dipilih Secara Ilmiah?</h4>
-        <div style="font-size: 0.82rem; color: #94A3B8; line-height: 1.6;">
-            <ol style="margin: 0; padding-left: 20px; color: #94A3B8;">
-                <li style="margin-bottom: 12px;">
-                    <strong style="color: #F1F5F9;">Penentuan Bobot Awal:</strong> Nilai persentase yang Anda atur pada slider di atas akan dijumlahkan dan dibagi total untuk menghasilkan bobot ternormalisasi yang berjumlah tepat 100% (nilai bobot $W = [w_1, w_2, w_3, w_4]$).
-                </li>
-                <li style="margin-bottom: 12px;">
-                    <strong style="color: #F1F5F9;">Normalisasi Kriteria (Simple Additive Weighting):</strong> Setiap alternatif mobil listrik akan dihitung nilai normalisasinya ($R$):
-                    <ul style="margin-top: 6px; padding-left: 20px;">
-                        <li style="margin-bottom: 4px;">Kriteria <span style="color: #F59E0B; font-weight: 700;">Harga (Cost)</span>: Dihitung dengan rumus $R_{{ij}} = \frac{{Min(X_j)}}{{X_{{ij}}}}$ (semakin murah harga mobil listrik, semakin tinggi skor normalisasinya).</li>
-                        <li>Kriteria <span style="color: #00D97E; font-weight: 700;">Range, Kecepatan, dan Baterai (Benefit)</span>: Dihitung dengan rumus $R_{{ij}} = \frac{{X_{{ij}}}}{{Max(X_j)}}$ (semakin tinggi spesifikasi mobil listrik, semakin tinggi skor normalisasinya).</li>
-                    </ul>
-                </li>
-                <li style="margin-bottom: 12px;">
-                    <strong style="color: #F1F5F9;">Perhitungan Nilai Preferensi ($V_i$):</strong> Mengalikan baris bobot ternormalisasi dengan baris nilai hasil normalisasi alternatif mobil listrik: $V_i = \\sum_{{j=1}}^{{n}} w_j \\cdot R_{{ij}}$.
-                </li>
-                <li>
-                    <strong style="color: #F1F5F9;">Pemeringkatan:</strong> Nilai preferensi akhir ($V_i$) yang berkisar antara 0 hingga 1 diurutkan dari yang terbesar untuk menyajikan rekomendasi mobil listrik terbaik.
-                </li>
-            </ol>
-        </div>
-    </div>
-    """)
+        """)
+        
+        if weights_dict is not None:
+            st.markdown('<div class="glass-card glass-card-green">', unsafe_allow_html=True)
+            st.markdown('<div class="section-label" style="margin-bottom: 12px;">Bobot Hasil AHP</div>', unsafe_allow_html=True)
+            
+            c_icons = {"price": "dollar", "range": "battery", "top_speed": "zap", "battery": "cpu"}
+            c_names = {"price": "Harga", "range": "Range", "top_speed": "Kecepatan", "battery": "Baterai"}
+            c_colors = {"price": "#F59E0B", "range": "#00D97E", "top_speed": "#3B82F6", "battery": "#06B6D4"}
+            
+            for key, val in weights_dict.items():
+                render_html(f"""
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; align-items: center;">
+                    <span style="font-weight: 700; color: #F1F5F9; display: flex; align-items: center; gap: 4px;">
+                        {get_icon(c_icons[key], 12, c_colors[key])} {c_names[key]}
+                    </span>
+                    <span class="numeric" style="color: {c_colors[key]};">{val*100:.1f}%</span>
+                </div>
+                <div style="height: 4px; background: rgba(255,255,255,0.04); margin-bottom: 12px; position: relative;">
+                    <div style="height: 100%; background: {c_colors[key]}; width: {val*100}%; box-shadow: 0 0 6px {c_colors[key]};"></div>
+                </div>
+                """)
+            st.markdown('</div>', unsafe_allow_html=True)
 
     # Submit controls
     st.markdown("---")
     cols = st.columns([2.5, 7.5])
     with cols[0]:
-        if st.button("🚀 Hitung SAW & Lihat Hasil", type="primary", use_container_width=True, key="submit_direct_weights"):
+        if st.button("Hitung SAW & Lihat Hasil", type="primary", use_container_width=True, key="submit_direct_weights"):
             trigger_confetti()
             st.session_state.show_loading = True
             st.rerun()
@@ -890,7 +882,7 @@ if st.session_state.stage == 1:
 # ──────────────────────────────────────────────────────────
 elif st.session_state.stage == 2:
     if st.session_state.weights is None:
-        st.error("❌ Silakan selesaikan Tahap 1 terlebih dahulu!")
+        st.error("Silakan selesaikan Tahap 1 terlebih dahulu!")
         st.session_state.stage = 1
         st.rerun()
 
@@ -904,7 +896,7 @@ elif st.session_state.stage == 2:
     st.session_state.saw_result = ranking_result
 
     # Display Top 10 using beautiful HTML custom table
-    st.markdown("### 🏆 Top 10 Mobil Listrik Terbaik")
+    st.markdown(f'<h3>{get_icon("award", 18, "#F1F5F9")}&nbsp; Top 10 Mobil Listrik Terbaik</h3>', unsafe_allow_html=True)
     
     def generate_table_html(df):
         html = """
@@ -928,13 +920,13 @@ elif st.session_state.stage == 2:
             rank_style = ""
             if rank == 1:
                 rank_style = "color: #F59E0B; font-weight: 800;"
-                rank_val = f"🥇 {rank}"
+                rank_val = f"#{rank}"
             elif rank == 2:
                 rank_style = "color: #94A3B8; font-weight: 800;"
-                rank_val = f"🥈 {rank}"
+                rank_val = f"#{rank}"
             elif rank == 3:
                 rank_style = "color: #CD7C2B; font-weight: 800;"
-                rank_val = f"🥉 {rank}"
+                rank_val = f"#{rank}"
             else:
                 rank_val = str(rank)
                 
@@ -962,7 +954,7 @@ elif st.session_state.stage == 2:
     st.markdown("---")
     
     # Search & Filter
-    st.markdown("### 🔎 Cari Mobil")
+    st.markdown(f'<h3>{get_icon("search", 18, "#F1F5F9")}&nbsp; Cari Mobil</h3>', unsafe_allow_html=True)
     search_term = st.text_input("Cari berdasarkan nama mobil listrik:", "", placeholder="Ketik nama mobil (misal: Tesla, Ioniq, ID.4...)")
     if search_term:
         filtered = ranking_result[ranking_result['name'].str.contains(search_term, case=False)]
@@ -975,11 +967,11 @@ elif st.session_state.stage == 2:
     st.markdown("---")
     cols = st.columns([1.5, 1.5, 7])
     with cols[0]:
-        if st.button("⏮️ Kembali ke AHP", type="secondary", use_container_width=True):
+        if st.button("Kembali ke AHP", type="secondary", use_container_width=True):
             st.session_state.stage = 1
             st.rerun()
     with cols[1]:
-        if st.button("📈 Lihat Visualisasi", type="primary", use_container_width=True):
+        if st.button("Lihat Visualisasi", type="primary", use_container_width=True):
             st.session_state.stage = 3
             st.rerun()
 
@@ -988,7 +980,7 @@ elif st.session_state.stage == 2:
 # ──────────────────────────────────────────────────────────
 elif st.session_state.stage == 3:
     if st.session_state.saw_result is None:
-        st.error("❌ Silakan selesaikan Tahap 2 terlebih dahulu!")
+        st.error("Silakan selesaikan Tahap 2 terlebih dahulu!")
         st.session_state.stage = 2
         st.rerun()
 
@@ -1000,7 +992,7 @@ elif st.session_state.stage == 3:
     top_10 = ranking_result.head(10)
 
     # Bar chart for Top 10
-    st.markdown("### 📊 Perbandingan Skor SAW (Top 10)")
+    st.markdown(f'<h3>{get_icon("chart", 18, "#F1F5F9")}&nbsp; Perbandingan Skor SAW (Top 10)</h3>', unsafe_allow_html=True)
     
     fig_bar = go.Figure(data=[
         go.Bar(
@@ -1036,7 +1028,7 @@ elif st.session_state.stage == 3:
     st.markdown("---")
 
     # Radar Chart for Top 3
-    st.markdown("### 🎯 Profil Perbandingan Spesifikasi (Top 3)")
+    st.markdown(f'<h3>{get_icon("target", 18, "#F1F5F9")}&nbsp; Profil Perbandingan Spesifikasi (Top 3)</h3>', unsafe_allow_html=True)
     
     top_3 = ranking_result.head(3)
     normalized_data = []
@@ -1101,11 +1093,11 @@ elif st.session_state.stage == 3:
     st.markdown("---")
 
     # Detailed Stats Summary Cards
-    st.markdown("### 📈 Ringkasan Keputusan")
+    st.markdown(f'<h3>{get_icon("trending-up", 18, "#F1F5F9")}&nbsp; Ringkasan Keputusan</h3>', unsafe_allow_html=True)
     
     cols = st.columns(4)
     with cols[0]:
-        st.metric("🥇 Rekomendasi Utama", top_10.iloc[0]['name'])
+        st.metric("Rekomendasi Utama", top_10.iloc[0]['name'])
     with cols[1]:
         st.metric("Skor Tertinggi", f"{top_10.iloc[0]['score']:.4f}")
     with cols[2]:
@@ -1118,19 +1110,17 @@ elif st.session_state.stage == 3:
     # Navigation Buttons
     cols = st.columns([1.5, 1.5, 7])
     with cols[0]:
-        if st.button("⏮️ Kembali ke Hasil", type="secondary", use_container_width=True):
+        if st.button("Kembali ke Hasil", type="secondary", use_container_width=True):
             st.session_state.stage = 2
             st.rerun()
     with cols[1]:
-        if st.button("🔄 Mulai Dari Awal", type="primary", use_container_width=True):
+        if st.button("Mulai Dari Awal", type="primary", use_container_width=True):
             st.session_state.stage = 1
             st.session_state.weights = None
             st.session_state.saw_result = None
-            st.session_state.direct_price = 25
-            st.session_state.direct_range = 25
-            st.session_state.direct_speed = 25
-            st.session_state.direct_battery = 25
-            st.session_state.active_preset = "equal"
+            st.session_state.ahp_s1 = 0
+            st.session_state.ahp_s2 = 0
+            st.session_state.ahp_s3 = 0
             st.rerun()
 
 # ──────────────────────────────────────────────────────────
@@ -1139,6 +1129,6 @@ elif st.session_state.stage == 3:
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #475569; font-size: 11px; margin-top: 20px; font-weight: 700; text-transform: uppercase;'>
-    SPK Pemilihan Mobil Listrik | Metode SAW | Developed with Streamlit & Plotly
+    SPK Pemilihan Mobil Listrik | Metode AHP + SAW | Developed with Streamlit & Plotly
 </div>
-""")
+""", unsafe_allow_html=True)
