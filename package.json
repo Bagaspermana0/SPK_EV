@@ -1,7 +1,0 @@
-{
-  "name": "spk-evfinder",
-  "private": true,
-  "scripts": {
-    "build": "npm --prefix frontend install && npm --prefix frontend run build"
-  }
-}
