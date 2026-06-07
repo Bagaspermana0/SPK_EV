@@ -782,10 +782,19 @@ if st.session_state.stage == 1:
         matrix[j, i] = round(1.0 / val, 6)
 
     # Compute AHP weights
-    weights, cr, lambda_max, status = ahp_calc.calculate(matrix)
+    weights_raw, cr, lambda_max, status = ahp_calc.calculate(matrix)
+    weights = None
+    if weights_raw is not None:
+        weights = {
+            "price": weights_raw[0],
+            "range": weights_raw[1],
+            "top_speed": weights_raw[2],
+            "battery": weights_raw[3]
+        }
     is_consistent = cr <= 0.10 if cr is not None else False
     st.session_state.weights = weights
     st.session_state.cr = cr
+
 
     with col_layout[1]:
         st.markdown('### 🔍 Validasi Matriks')
